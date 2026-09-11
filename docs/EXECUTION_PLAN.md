@@ -49,11 +49,11 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية (CHECKPOINT — 2026-09-12):** Phase 4 (Audit) **مكتملة محليًا، 97/97 اختبار ناجح، لسه مش متعمّلها Commit/Push**. ده checkpoint صريح طلبه Ahmed — لو الجلسة اتقطعت، ابدأ من هنا بالظبط: (1) شغّل `git status` تأكد التغييرات لسه موجودة، (2) اعمل `git add -A` + commit بنفس أسلوب رسائل Commit السابقة (راجع تاريخ commits Phase 1-3) + push، (3) بعدها كمّل Phase 5 — Document Core (§37-38).
-- **Repository:** https://github.com/Darhous/archive — Phase 0/1/2/3 مدفوعة على `main`، CI شغّال. Phase 4 لسه محليًا بس.
-- **آخر مرحلة مكتملة (مدفوعة):** Phase 3 — Authentication & Roles.
-- **آخر مرحلة مكتملة (محليًا، لسه مش مدفوعة):** Phase 4 — Audit (97/97 اختبار، تفاصيل كاملة في قسم Phase 4 تحت).
-- **العمل القادم:** Commit + Push لـPhase 4 (لو مكملتش إنت)، ثم Phase 5 — Document Core (§37-38): Document entity/Version entity/Archive number، Managed storage + Indexed-in-place، Hash (SHA-256) + Duplicate detection، Recycle Bin + Restore، Version history، `IFileStorageService`.
+- **المرحلة الحالية:** Phase 5 (Document Core) مكتملة محليًا، 113/113 اختبار ناجح. جاري تجهيز Commit+Push، ثم Phase 6 (Folder System).
+- **Repository:** https://github.com/Darhous/archive — Phase 0-4 مدفوعة على `main` (آخر commit مدفوع: `f606970`)، CI شغّال. Phase 5 لسه محليًا وقت كتابة السطر ده.
+- **آخر مرحلة مكتملة (مدفوعة):** Phase 4 — Audit + قاعدة اقتصاد الـContext (§0.1.1).
+- **آخر مرحلة مكتملة (محليًا):** Phase 5 — Document Core (113/113 اختبار، تفاصيل كاملة في قسم Phase 5 تحت).
+- **العمل القادم:** Commit + Push لـPhase 5، ثم Phase 6 — Folder System (§39): Logical folders + Tree + Subfolders، Move/Rename/Delete rules/Unclassified، Bulk move + Undo snapshot.
 - **عوائق مفتوحة:** لا يوجد. **ديون تقنية متبقية** (§142): `outbox_events.user_id` و`audit_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود لكل واحد) — هيتحلوا لما نبني lookup فعلي بين Guid uid والـinternal id، مش عاجل. **ملاحظة قديمة:** حساب Admin افتراضي اتنشأ على %ProgramData% الجهاز الحقيقي وقت اختبار Phase 3 — كلمة المرور اتعرضت مرة واحدة واتقفلت قبل الالتقاط؛ امسح `%ProgramData%\DarhousSmartArchive` لو عايز تبدأ من الصفر.
 
 ---
@@ -189,14 +189,20 @@ Performance → Installer
 - [x] 5 اختبار جديد (`Darhous.Archive.Audit.Tests`)، **97/97 اختبار على مستوى الحل بالكامل**.
 - **دين تقني موروث**: `audit_events.user_id` لسه NULL دايمًا (نفس مشكلة `outbox_events.user_id` من Phase 2/3 — الهوية الكاملة محفوظة عبر `username_snapshot`/`role_snapshot` بدل الـFK، وده أصلاً التصميم الموثّق في DB Spec).
 
-### Phase 5 — Document Core `[ ]`
-*مرجع: §37-38*
-- [ ] Document entity, Version entity, Archive number
-- [ ] Managed storage + Indexed-in-place
-- [ ] Hash (SHA-256) + Duplicate detection
-- [ ] Recycle Bin + Restore + Version history
-- [ ] `IFileStorageService`: Stage/Commit/Open/Move to recycle/Restore/Delete permanently/Hash/Validate
-- **DoD (§132):** Add/version/hash/duplicate warning/move/trash/restore/permanent delete (Admin-only)/audit/indexed-in-place/managed storage.
+### Phase 5 — Document Core `[x]`
+*مرجع: §37-38 — قرار التصميم راجعه Codex عبر AgentFlow (Level 2)، تفاصيل في `.agentflow/task-state.json` (TaskId `20260912-022110-956990ba`)*
+- [x] Document entity, Version entity, Archive number — `Darhous.Archive.Application/Persistence/Document.cs`+`DocumentVersion.cs`، `ArchiveNumberGenerator` (transactional عبر `number_sequences`، صيغة `ARC-{YYYY}-{000001}`، يعيد الترقيم من 1 عند تغيّر السنة)
+- [x] Managed storage + Indexed-in-place — `IFileStorageService`/`FileStorageService` (مشروع جديد `Darhous.Archive.Modules.Documents`): تخطيط فيزيائي `ArchiveStorage/Documents/{year}/{month}/{DocumentUID}/v{N}/` (§49)، الاسم الفيزيائي `<DocumentUID>_<VersionNo>.ext` (§151 — العنوان لا يظهر أبدًا في اسم الملف)
+- [x] Hash (SHA-256) + Duplicate detection — `ComputeSha256Async` + `FindBySha256Async`، الافتراضي رفض التكرار مع رسالة توضح رقم الأرشيف الموجود (SAD §32 "Detect → Warn → User chooses")، مع `allowDuplicate: true` للسماح صراحة
+- [x] Recycle Bin + Restore + Version history — `recycle_bin_entries` (Migration جديدة)، `TrashDocumentAsync`/`RestoreDocumentAsync`، `ListForDocumentAsync` لتاريخ الإصدارات
+- [x] `IFileStorageService`: Stage/Commit/Open/MoveToRecycleStaging/Restore/DeletePermanently/Hash — **قرار تصميمي مهم (من مراجعة Codex)**: نقل الملف لمكانه النهائي يحصل **قبل** commit الـDB transaction، مش بعده — لو الـDB فشلت بعد نقل الملف، النتيجة ملف يتيم (orphan) قابل للتنظيف لاحقًا، مش سجل DB يشاور على ملف مش موجود (أسوأ حالة فشل). **تبسيط متعمد عن اقتراح Codex الكامل**: رفضنا بناء "Import Operation Journal" table كاملة (over-engineering لتطبيق Desktop مستخدم واحد بـWrite Queue واحد مسلسل بالفعل) — ملف يتيم قابل للـSelf-healing لاحقًا كافي لـV1.
+- [x] Permanent Delete (Admin-only) — `PermanentDeleteDocumentAsync` بيرفض لو الدور مش Admin، يطبّق DB Spec §109 (نقل الملفات لـDeletion Staging قبل حذف الـMetadata، مش بعده)
+- [x] **Migrations إضافية**: `file_path_normalized` column (§148، فهرس UNIQUE جزئي يتجاهل القيم الفارغة)، `number_sequences` table (§28)، `recycle_bin_entries` table (§46)
+- [x] **`ArabicNormalization`** (Core/Text) — نُقل من Phase 8 المخطَّط لأن `documents.title_normalized` عمود NOT NULL محتاج قيمة من أول Phase 5؛ نفس الدالة هتُستخدم في Phase 8 (FTS) بدل التكرار
+- [x] **ربطنا دين Phase 4 التقني**: add_document/move_document/delete_document/restore_document/permanent_delete كلهم بقوا مسجَّلين فعليًا في الـAudit
+- [x] 16 اختبار جديد (`Darhous.Archive.Modules.Documents.Tests`)، **113/113 اختبار على مستوى الحل بالكامل**
+- **دين تقني موروث**: `documents.created_by`/`updated_by` بيتسجلوا NULL دلوقتي لو الـcaller ما بعتش Guid فعلي (مفيش UI لسه بيبعت المستخدم الحالي — هيتحل مع Explorer UI في Phase 7)
+- **DoD (§132):** ✅ Add/version/hash/duplicate warning/move/trash/restore/permanent delete (Admin-only)/audit/indexed-in-place/managed storage — كل بند اتغطى باختبار فعلي.
 
 ### Phase 6 — Folder System `[ ]`
 *مرجع: §39*
@@ -395,4 +401,5 @@ Performance → Installer
 2026-09-11 — Phase 2 (Persistence Foundation) مكتملة: راجعتها الـ3 نماذج عبر AgentFlow (Level 4 — قرار: الإبقاء على تقسيم الـ3 قواعد بيانات، رفض توصية Gemini بدمجها في ملف واحد لأنه قرار معماري سابق ومعتمد في SAD/DB Spec). Darhous.Archive.Persistence مشروع جديد كامل: SqliteConnectionFactory (WAL+FK+busy_timeout)، MigrationRunnerFactory (Runner مستقل لكل DB، Tag-based)، أول Migration SQL خام (11 جدول، ON DELETE من §107.1، فهارس §99)، SqliteWriteQueue (Channel-based، اتصال كتابة واحد لكل DB)، SqliteUnitOfWork/IUnitOfWorkContext، RoleRepository (Dapper)، OutboxWriter/OutboxEventBus (استبدل InMemoryEventBus، Reliable/Critical بقوا شغّالين فعليًا)، SqliteDatabaseHealthContributor × 3. اكتُشف وأُصلح Bug حقيقي: FluentMigrator يرمي استثناء لو DB معندهاش Migrations مطابقة، فـaudit.db/search.db اتأجل تشغيل الـMigrator بتاعهم لحد Phase 4/8. عدّلت الوثيقة الأم (outbox_events.delivery_level، فهرس COALESCE لأسماء الفولدرات). 33 اختبار جديد، 66/66 على مستوى الحل، Release build نظيف. جاري commit+push، بعدها Phase 3.
 2026-09-11 — Phase 3 (Authentication & Roles) مكتملة: Migrations جديدة (user_sessions، Seed لـ4 أدوار)، AppUserRepository/SessionRepository (نفس نمط Dual-mode)، AuthenticationService (Login بخطأ عام موحّد ضد Credential Enumeration، Lockout 5 محاولات/15 دقيقة، Session tokens SHA-256، Remember Me)، UserManagementService (Last Admin Protection مُتحقَّق بـ4 اختبارات)، DefaultPermissionEvaluator (الـmatrix الفعلي المؤجل من Phase 1). أول مشروع WPF في الحل: Darhous.Archive.Desktop — Login UI حسب UI/UX §91، Theme system (Light/Dark/RTL)، First-Run Bootstrap (Admin افتراضي بكلمة مرور عشوائية معروضة مرة واحدة). اكتُشفت مشكلة C# حقيقية: namespace التصادم بين "Darhous.Archive.Application" (مشروعنا) و"System.Windows.Application" (WPF) — الحل: fully-qualify صريح، مش global alias (الـalias مالوش أولوية على enclosing-namespace member lookup). 60 اختبار جديد، 91/91 على مستوى الحل. شُغِّل الـexe فعليًا (مش Tests بس) وأكَّد نجاح الـstartup من الـlogs. جاري commit+push، بعدها Phase 4.
 2026-09-12 — Phase 4 (Audit) مكتملة: مشروع جديد Darhous.Archive.Audit (منفصل عن Persistence حسب هيكل الحل)، Migration audit_events (DB Spec §82)، BufferedAuditService (Critical actions §106 تُكتب فورًا، الباقي Buffered كل 2 ثانية/200 عنصر عبر Channel)، IAuditQueryService (فلترة+Pagination). ربطنا Login/Logout الفعليين في AuthenticationService بالـAudit (خارج الـUnitOfWork لأن audit.db وarchive.db قاعدتين منفصلتين). search/sort/filter/add/move/delete لسه مش مربوطين لأن المزايا نفسها (Search/Documents/Folders) لسه مبنيتش — هيتربطوا مع كل Phase. 5 اختبار جديد، 97/97 على مستوى الحل. **CHECKPOINT بطلب Ahmed — الشغل ده لسه مش متعمّله commit/push وقت كتابة السطر ده.**
+2026-09-12 — Ahmed طلب checkpoint (اتعمل، commit `5b04a37`) + قاعدة اقتصاد Context لـMulti-Agent Orchestration (§0.1.1، commit `f606970`) بعد ملاحظة استهلاك توكينز عالي (رد Codex كان فيه سطر ~125K توكِن من tool logs داخلية). Phase 5 (Document Core) بعدها: راجعناها مع Codex (Level 2) قبل التنفيذ — قرار: نقل الملف الفعلي قبل commit الـDB (orphan file أهون من DB record بيشاور على ملف مش موجود)، ورفضنا اقتراحه ببناء Import Operation Journal كامل (over-engineering لتطبيق مستخدم واحد). بنينا: Darhous.Archive.Modules.Documents (IFileStorageService/FileStorageService/DocumentService)، Migrations جديدة (file_path_normalized، number_sequences، recycle_bin_entries)، ArabicNormalization اتنقلت من Phase 8 المخطَّط لأنها لازمة من دلوقتي (title_normalized NOT NULL). ربطنا كل أفعال المستندات بالـAudit (حل دين Phase 4). 16 اختبار جديد، 113/113 على مستوى الحل. جاري commit+push، بعدها Phase 6.
 ```

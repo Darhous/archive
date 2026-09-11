@@ -9,11 +9,15 @@
     <Project Path="src/Darhous.Archive.Persistence/Darhous.Archive.Persistence.csproj" />
     <Project Path="src/Darhous.Archive.Security/Darhous.Archive.Security.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="src/Modules/Darhous.Archive.Modules.Documents/Darhous.Archive.Modules.Documents.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Darhous.Archive.Application.Tests/Darhous.Archive.Application.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Audit.Tests/Darhous.Archive.Audit.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Configuration.Tests/Darhous.Archive.Configuration.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Core.Tests/Darhous.Archive.Core.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Modules.Documents.Tests/Darhous.Archive.Modules.Documents.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Persistence.Tests/Darhous.Archive.Persistence.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Security.Tests/Darhous.Archive.Security.Tests.csproj" />
   </Folder>

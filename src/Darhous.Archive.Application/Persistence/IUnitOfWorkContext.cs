@@ -13,5 +13,13 @@ public interface IUnitOfWorkContext
 
     ISessionRepository Sessions { get; }
 
+    IDocumentRepository Documents { get; }
+
+    IDocumentVersionRepository DocumentVersions { get; }
+
+    IRecycleBinRepository RecycleBin { get; }
+
+    IArchiveNumberGenerator ArchiveNumbers { get; }
+
     IOutboxWriter Outbox { get; }
 }

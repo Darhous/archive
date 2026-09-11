@@ -14,5 +14,13 @@ internal sealed class SqliteUnitOfWorkContext(SqliteConnection connection, Sqlit
 
     public ISessionRepository Sessions { get; } = new SessionRepository(connection, transaction);
 
+    public IDocumentRepository Documents { get; } = new DocumentRepository(connection, transaction);
+
+    public IDocumentVersionRepository DocumentVersions { get; } = new DocumentVersionRepository(connection, transaction);
+
+    public IRecycleBinRepository RecycleBin { get; } = new RecycleBinRepository(connection, transaction);
+
+    public IArchiveNumberGenerator ArchiveNumbers { get; } = new ArchiveNumberGenerator(connection, transaction);
+
     public IOutboxWriter Outbox { get; } = new OutboxWriter(connection, transaction);
 }

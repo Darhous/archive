@@ -7,6 +7,7 @@ using Darhous.Archive.Application.Persistence;
 using Darhous.Archive.Audit;
 using Darhous.Archive.Configuration;
 using Darhous.Archive.Core.Hosting;
+using Darhous.Archive.Modules.Documents;
 using Darhous.Archive.Desktop.Hosting;
 using Darhous.Archive.Desktop.Themes;
 using Darhous.Archive.Desktop.ViewModels;
@@ -33,6 +34,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddPersistence();
         builder.Services.AddAudit();
         builder.Services.AddSecurity();
+        builder.Services.AddDocumentsModule();
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginWindow>();
 
