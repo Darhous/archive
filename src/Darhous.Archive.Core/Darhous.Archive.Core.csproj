@@ -9,4 +9,8 @@
     <PackageReference Include="Serilog.Sinks.Debug" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Darhous.Archive.Contracts\Darhous.Archive.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Darhous.Archive.Contracts\Darhous.Archive.Contracts.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Core\Darhous.Archive.Core.csproj" />
+  </ItemGroup>
+
+</Project>

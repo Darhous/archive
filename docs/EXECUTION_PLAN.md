@@ -6,6 +6,18 @@
 
 ---
 
+## 0.1 قواعد تشغيل دائمة (2026-09-11) — Multi-Agent Orchestration Mandate
+
+هذه قواعد تشغيل ثابتة للمشروع بالكامل، مسجّلة هنا لأنها يجب أن تنجو من أي Compact/Reset/Session جديدة. **اقرأها قبل أي استئناف عمل.**
+
+- **الطبقة الهندسية المساعدة:** `C:\AI-AgentFlow-Test` — نظام Multi-Agent حقيقي ومُختبَر (Level 0-4 complexity-scored orchestrator في `scripts/orchestrator/Invoke-Orchestration.ps1`)، بيوجّه المهام لـ 3 CLIs: `claude` (Claude Sonnet 5)، `codex` (GPT-5.6 Sol)، `agy` (Gemini 3.1 Pro High). كل الـ3 مثبَّتين وشغّالين على الجهاز (تم التحقق 2026-09-11).
+- **قاعدة التوجيه:** سهل → أنفّذه مباشرة. متوسط → Worker واحد. صعب → Workerين. حرج/معماري/أمني/DataLoss → الثلاثة. Claude Code (أنا) هو الـMaster Orchestrator وصاحب القرار النهائي دائمًا — الـWorkers يُستشارون ولا يُفوَّض لهم القرار.
+- **الاستمرارية:** لا أتوقف بسبب Bugs عادية، اختلافات نماذج، Worker غير متاح مؤقتًا، أو قرارات تقنية روتينية. أسأل فقط عند: (1) قرار Product/Business حقيقي لا يُستنتج من التوثيق، (2) الحاجة لـCredentials/Authorization خارجي، (3) إجراء تدميري/غير قابل للعكس.
+- **حدود حقيقية يجب الوضوح فيها:** لا أستطيع "الاستمرار تلقائيًا بعد Reset" حرفيًا لو انتهت الجلسة تمامًا (Process kill / Usage limit ينهي الجلسة) — محتاج الجلسة تتفتح تاني (بمعرفة Ahmed أو Scheduled trigger). الآلية الفعلية لضمان الاستمرارية: هذا الملف نفسه — كل استئناف عمل يبدأ بقراءته (قسم 1: الحالة الحالية) بدل الاعتماد على سجل المحادثة.
+- **الهدف المتفق عليه:** تنفيذ متواصل حتى نهاية Phase 22 (Performance Validation)، بأعلى جودة وأقل أخطاء وأعلى إنتاجية وأقل استهلاك Context ممكن.
+
+---
+
 ## 0. الغرض من هذا الملف
 
 هذا الملف هو **المرجع العملي الوحيد** لتتبع التنفيذ. الوثيقة الأم (15,400+ سطر) هي مصدر الحقيقة المعمارية والتفصيلية، لكنها كبيرة جدًا لإعادة قراءتها كل مرة. هذا الملف:
@@ -23,10 +35,10 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية:** Phase 0 (Bootstrap) منجزة محليًا. بانتظار `git init` + أول Push لـ`main` على GitHub، وتشغيل CI فعليًا كتحقق نهائي.
-- **Repository:** https://github.com/Darhous/archive (فاضي على GitHub، الكود جاهز محليًا للـPush).
-- **آخر مرحلة مكتملة:** Phase 0 — Bootstrap (محليًا؛ لم يُدفع للـremote بعد).
-- **العمل القادم:** دفع الكود لـGitHub، ثم البدء في Phase 1 — Core Foundation (§29).
+- **المرحلة الحالية:** Phase 1 (Core Foundation) مكتملة، جاري تجهيز الـCommit والدفع، ثم البدء في Phase 2 (Persistence Foundation) فورًا وبشكل متواصل حتى Phase 22 (راجع §0.1 قواعد التشغيل).
+- **Repository:** https://github.com/Darhous/archive — Phase 0 مدفوعة على `main`، CI شغّال.
+- **آخر مرحلة مكتملة:** Phase 1 — Core Foundation (محليًا؛ 33/33 اختبار ناجح، Build نظيف).
+- **العمل القادم:** Commit + Push لـPhase 1، ثم Phase 2 — Persistence Foundation (§32-33): archive.db/audit.db/search.db، FluentMigrator، Dapper repositories، تطبيق ON DELETE policy (§107.1)، أول Migration.
 - **عوائق مفتوحة:** لا يوجد.
 
 ---
@@ -106,14 +118,20 @@ Performance → Installer
 
 **ملاحظة نطاق:** Phase 0 أنشأ فقط `Darhous.Archive.Core` (كمكتبة تحمل الـHosting bootstrap) و`Darhous.Archive.Core.Tests` — الحد الأدنى لإثبات إن pipeline البناء/الاختبار/الـLogging شغّال. باقي مشاريع §5 (Contracts, Application, Persistence, Desktop, Modules, Workers...) تُضاف تباعًا بداية من Phase 1.
 
-### Phase 1 — Core Foundation `[ ]`
+### Phase 1 — Core Foundation `[x]`
 *مرجع: §29-31*
-- [ ] Core, Contracts, Application skeleton
-- [ ] Configuration, Security abstractions
-- [ ] Event Bus, Job abstractions, Health model
-- [ ] Result Model (`Result` / `Result<T>` مع ErrorCode/Message/TechnicalDetails/IsTransient)
-- [ ] Correlation (CorrelationId لكل Command/Job/Event/Worker/Plugin request)
-- **DoD (§131):** App starts, Logging, DI, Configuration, archive.db/audit.db تفتح، migrations، login، roles، event bus، jobs، outbox، health، shutdown آمن.
+- [x] Core, Contracts, Application skeleton — 5 مشاريع: `Darhous.Archive.Contracts` (DTOs/enums، بدون Business Logic)، `Darhous.Archive.Core` (ممتد)، `Darhous.Archive.Application` (Dispatcher + ICommandHandler/IQueryHandler عبر reflection)، `Darhous.Archive.Configuration`، `Darhous.Archive.Security`
+- [x] Configuration (AppPaths per §92-93، ThemeOptions، UpdateOptions، IFeatureFlagProvider، IAppSettingsStore + In-Memory impl مؤقت لحد Persistence)
+- [x] Security abstractions (IPasswordHasher + **Argon2idPasswordHasher فعلي** يطابق القرار المعتمد، ISecretProtector + **DpapiSecretProtector فعلي**، ArchivePrincipal/UserRole/Guest)
+- [x] Event Bus (`IEventBus` + `InMemoryEventBus` — Transient tier فقط؛ Reliable/Critical يرميان `NotSupportedException` صراحةً لحد ما الـOutbox يتبني في Phase 2 — لا Silent downgrade)
+- [x] Job abstractions (`IBackgroundJob`, `IJobContext`, `JobStatus`, `JobMetadata` في Contracts)
+- [x] Health model (`IHealthContributor`, `IHealthRegistry` + `HealthRegistry` — Health check فاشل لمكوّن واحد ما بيمنعش باقي الفحوصات، اتغطى باختبار)
+- [x] Result Model (`Result` / `Result<T>` مع Error{Code,Message,TechnicalDetails,IsTransient} — في `Darhous.Archive.Core.Results`)
+- [x] Correlation (`CorrelationId` + `ICorrelationContextAccessor`/`AsyncLocalCorrelationContextAccessor`)
+- [x] Module Registry (`IArchiveModule`, `IModuleRegistry` + `ModuleRegistry`) + Permissions abstractions (`UserRole`, `Permission`, `WellKnownPermissions` مطابقة لـSAD §75، `IPermissionEvaluator` — التطبيق الفعلي للـmatrix في Phase 3)
+- [x] 33 اختبار (xUnit) عبر 4 مشاريع Tests، كلها Passed. `TreatWarningsAsErrors` مفعّل على مشاريع src (0 warnings).
+- **DoD (§131) — الجزء المُغطى في Phase 1:** Logging ✅، DI ✅، Configuration ✅ (abstractions). البقية (App starts فعليًا، archive.db/audit.db، migrations، login، roles، jobs الحقيقية، outbox، shutdown آمن) تُغطى تراكميًا مع Phase 2-4 كما هو موضح أصلاً في §2 من هذا الملف (فجوة "مؤجلة عمدًا" — ليست نقص في Phase 1).
+- **ملاحظة نطاق:** لم يُبنَ بعد: Plugin Host الفعلي (Phase 12)، Outbox/Reliable delivery (Phase 2)، Role→Permission matrix الفعلي (Phase 3)، DB-backed AppSettingsStore (Phase 2). كل ده متعمَّد ومُوثَّق في كل ملف كتعليق `///`.
 
 ### Phase 2 — Persistence Foundation `[ ]`
 *مرجع: §32-33*
@@ -339,4 +357,6 @@ Performance → Installer
 ```text
 2026-09-11 — التوثيق الأم اكتمل ومُراجَع، الفجوات التقنية والمنتجية سُدَّت، هذه الخطة أُنشئت. لم يبدأ التنفيذ البرمجي بعد.
 2026-09-11 — Phase 0 (Bootstrap) مكتملة محليًا: Repository structure, .slnx solution, Directory.Build.props/Packages.props, global.json (net 10.0.302), .editorconfig, .gitignore, Darhous.Archive.Core + ArchiveHostDefaults (Serilog+Hosting bootstrap), Darhous.Archive.Core.Tests (2/2 tests passed), CI workflow (windows-latest), README, LICENSE. dotnet build/test نجحا محليًا. لسه محتاج git init + push لـ GitHub.
+2026-09-11 — Phase 0 اتدفعت على main (github.com/Darhous/archive) بعد تأكيد Ahmed. Ahmed أعطى تفويض Multi-Agent Orchestration (C:\AI-AgentFlow-Test — تم التحقق: claude/codex/agy CLIs شغّالين فعليًا) + أمر بالاستمرار المتواصل حتى Phase 22 بدون توقف للقرارات الروتينية. قواعد التشغيل اتسجلت في §0.1 من هذا الملف.
+2026-09-11 — Phase 1 (Core Foundation) مكتملة: 5 مشاريع جديدة/ممتدة (Contracts, Core موسّع, Application, Configuration, Security) — Result/Error model, Correlation (AsyncLocal), IEventBus + InMemoryEventBus (Transient-only، Reliable/Critical يرفضان صراحة لحد الـOutbox)، IHealthContributor/HealthRegistry، IBackgroundJob/IJobContext، IArchiveModule/ModuleRegistry، UserRole/Permission/IPermissionEvaluator، Argon2idPasswordHasher فعلي، DpapiSecretProtector فعلي، Dispatcher (reflection-based command/query routing). 33/33 اختبار ناجح، 0 warnings (TreatWarningsAsErrors). جاري الـcommit+push، بعدها مباشرة Phase 2.
 ```

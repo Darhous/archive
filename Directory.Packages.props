@@ -21,6 +21,12 @@
     <PackageVersion Include="Serilog.Sinks.Debug" Version="3.0.0" />
   </ItemGroup>
 
+  <!-- Security: Argon2id password hashing (DB Spec §19, decision log EXECUTION_PLAN §2.5), DPAPI secrets (Implementation Plan §94) -->
+  <ItemGroup>
+    <PackageVersion Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
+  </ItemGroup>
+
   <!-- Testing -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
