@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Darhous.Archive.Security\Darhous.Archive.Security.csproj" />
+    <ProjectReference Include="..\..\src\Darhous.Archive.Persistence\Darhous.Archive.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

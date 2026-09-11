@@ -1,0 +1,37 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- UI/UX Design System §29-30: Amiri for brand/major headings only, IBM Plex Sans Arabic
+         for everything else. Neither font ships with the app yet (§30: "يجب ألا يعتمد التطبيق
+         على تحميل Font عبر الإنترنت") — until they're embedded as project resources, WPF falls
+         back through the chain below to whatever is installed (Segoe UI / Tahoma ship with
+         every Windows 10/11 machine, so the app never renders unstyled). -->
+    <FontFamily x:Key="BrandFontFamily">Amiri, Traditional Arabic, Segoe UI, Tahoma, sans-serif</FontFamily>
+    <FontFamily x:Key="UiFontFamily">IBM Plex Sans Arabic, Segoe UI, Tahoma, sans-serif</FontFamily>
+
+    <!-- UI/UX Design System §31 (Font Weights) -->
+    <FontWeight x:Key="RegularWeight">Regular</FontWeight>
+    <FontWeight x:Key="MediumWeight">Medium</FontWeight>
+    <FontWeight x:Key="SemiBoldWeight">SemiBold</FontWeight>
+    <FontWeight x:Key="BoldWeight">Bold</FontWeight>
+
+    <Style x:Key="BrandHeadingText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource BrandFontFamily}" />
+        <Setter Property="FontWeight" Value="{StaticResource SemiBoldWeight}" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style x:Key="BodyText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
+        <Setter Property="FontWeight" Value="{StaticResource RegularWeight}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style x:Key="SecondaryText" TargetType="TextBlock" BasedOn="{StaticResource BodyText}">
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+</ResourceDictionary>

@@ -4,6 +4,7 @@
     <Project Path="src/Darhous.Archive.Configuration/Darhous.Archive.Configuration.csproj" />
     <Project Path="src/Darhous.Archive.Contracts/Darhous.Archive.Contracts.csproj" />
     <Project Path="src/Darhous.Archive.Core/Darhous.Archive.Core.csproj" />
+    <Project Path="src/Darhous.Archive.Desktop/Darhous.Archive.Desktop.csproj" />
     <Project Path="src/Darhous.Archive.Persistence/Darhous.Archive.Persistence.csproj" />
     <Project Path="src/Darhous.Archive.Security/Darhous.Archive.Security.csproj" />
   </Folder>

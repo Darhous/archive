@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Darhous.Archive.Core\Darhous.Archive.Core.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Application\Darhous.Archive.Application.csproj" />
   </ItemGroup>
 
 </Project>

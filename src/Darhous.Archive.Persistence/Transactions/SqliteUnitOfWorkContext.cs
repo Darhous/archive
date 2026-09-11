@@ -10,5 +10,9 @@ internal sealed class SqliteUnitOfWorkContext(SqliteConnection connection, Sqlit
 {
     public IRoleRepository Roles { get; } = new RoleRepository(connection, transaction);
 
+    public IAppUserRepository Users { get; } = new AppUserRepository(connection, transaction);
+
+    public ISessionRepository Sessions { get; } = new SessionRepository(connection, transaction);
+
     public IOutboxWriter Outbox { get; } = new OutboxWriter(connection, transaction);
 }

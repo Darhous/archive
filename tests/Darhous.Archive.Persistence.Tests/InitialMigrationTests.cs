@@ -9,6 +9,7 @@ public class InitialMigrationTests : PersistenceTestBase
     [
         "roles", "app_users", "folders", "documents", "document_versions",
         "tags", "document_tags", "jobs", "outbox_events", "app_settings", "schema_migrations",
+        "user_sessions", // M202609110002_UserSessions (Phase 3)
     ];
 
     [Fact]
@@ -48,6 +49,25 @@ public class InitialMigrationTests : PersistenceTestBase
         Assert.Contains("ix_document_versions_sha256", indexes);
         Assert.Contains("ix_outbox_events_status_next_retry", indexes);
         Assert.Contains("ix_jobs_status_priority_created", indexes);
+        Assert.Contains("ux_user_sessions_token_hash", indexes);
+    }
+
+    [Fact]
+    public async Task ArchiveDb_HasFourSeededSystemRoles()
+    {
+        var factory = new SqliteConnectionFactory(Options);
+        await using var connection = await factory.OpenAsync(DatabaseKind.Archive, CancellationToken.None);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT code FROM roles ORDER BY id;";
+
+        var codes = new List<string>();
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            codes.Add(reader.GetString(0));
+        }
+
+        Assert.Equal(["admin", "user", "readonly", "guest"], codes);
     }
 
     [Fact]

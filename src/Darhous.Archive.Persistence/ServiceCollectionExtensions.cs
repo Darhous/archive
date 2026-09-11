@@ -52,6 +52,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IRoleRepository>(sp =>
             new RoleRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
 
+        services.AddSingleton<IAppUserRepository>(sp =>
+            new AppUserRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
+
+        services.AddSingleton<ISessionRepository>(sp =>
+            new SessionRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
+
         services.AddSingleton<InMemoryEventBus>();
         services.AddSingleton<IEventBus, OutboxEventBus>();
 

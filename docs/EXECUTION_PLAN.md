@@ -35,11 +35,11 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية:** Phase 2 (Persistence Foundation) مكتملة ومُختبَرة بالكامل (66/66 اختبار). جاري تجهيز الـCommit والدفع، ثم البدء في Phase 3 (Authentication & Roles) فورًا وبشكل متواصل حتى Phase 22 (راجع §0.1 قواعد التشغيل).
-- **Repository:** https://github.com/Darhous/archive — Phase 0 و Phase 1 مدفوعتين على `main`، CI شغّال.
-- **آخر مرحلة مكتملة:** Phase 2 — Persistence Foundation (محليًا؛ 66/66 اختبار ناجح، Release build نظيف).
-- **العمل القادم:** Commit + Push لـPhase 2، ثم Phase 3 — Authentication & Roles (§34-35): Login/Logout/Switch User/Remember Me/Guest Mode، Admin/User/ReadOnly roles + Last Admin protection، ربط Argon2idPasswordHasher الفعلي (موجود من Phase 1) بمسار Login حقيقي، Login UI.
-- **عوائق مفتوحة:** لا يوجد. **دين تقني مسجَّل** (§142): `outbox_events.user_id` غير مربوط بعد بالـuid الفعلي — يُحل عند بناء `IAppUserRepository` في Phase 3.
+- **المرحلة الحالية:** Phase 3 (Authentication & Roles) مكتملة، جاري تجهيز الـCommit والدفع، ثم Phase 4 (Audit) مباشرة (راجع §0.1 قواعد التشغيل).
+- **Repository:** https://github.com/Darhous/archive — Phase 0/1/2 مدفوعة على `main`، CI شغّال.
+- **آخر مرحلة مكتملة:** Phase 3 — Authentication & Roles (محليًا؛ 91/91 اختبار ناجح على مستوى الحل، Release build نظيف، تحقق تشغيلي فعلي للـexe).
+- **العمل القادم:** Commit + Push لـPhase 3، ثم Phase 4 — Audit (§36): audit.db، Audit service حقيقي (Critical immediate writes + Buffered normal writes)، تسجيل login/logout/search/sort/filter/add/move/delete من أول نسخة تشغيلية، Audit viewer query.
+- **عوائق مفتوحة:** لا يوجد. **دين تقني متبقٍ** (§142): `outbox_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود). **ملاحظة:** حساب Admin افتراضي اتنشأ فعليًا على %ProgramData% الجهاز الحقيقي أثناء اختبار التشغيل — كلمة المرور العشوائية اتعرضت مرة واحدة واتقفلت قبل الالتقاط. Ahmed يقدر يمسح `%ProgramData%\DarhousSmartArchive` لإعادة البدء من الصفر، أو يشغّل التطبيق ويلتقط الشاشة بنفسه.
 
 ---
 
@@ -152,12 +152,16 @@ Performance → Installer
 - مكتبة Argon2id تحتاج Persistence.Tests على `net10.0-windows` (DPAPI Windows-only بالفعل من Phase 1)
 - TODO مسجَّل (Technical Debt Policy §142): `outbox_events.user_id` لسه مش متربط بـGuid uid الفعلي — محتاج `IAppUserRepository` من Phase 3
 
-### Phase 3 — Authentication & Roles `[ ]`
+### Phase 3 — Authentication & Roles `[x]`
 *مرجع: §34-35*
-- [ ] Login / Logout / Switch User / Remember Me / Guest Mode
-- [ ] Admin/User/ReadOnly roles + Last Admin protection
-- [ ] Password hashing عبر Argon2id (`Konscious.Security.Cryptography.Argon2`)
-- [ ] Login UI
+- [x] Login / Logout / Guest Mode — `IAuthenticationService`/`AuthenticationService` (Security project): Login بتشفير عام لرسالة الخطأ (نفس الرسالة لاسم مستخدم غير موجود أو كلمة مرور خاطئة — منع Credential Enumeration)، Lockout بعد 5 محاولات فاشلة (15 دقيقة، قابل للتعديل عبر `AuthenticationOptions`)، Session tokens عشوائية 256-bit مُخزَّنة كـSHA-256 hash فقط (مطابق DB Spec §21). Guest Mode = `ArchivePrincipal.Guest` بدون جلسة DB، يظهر فقط لو `app_settings["guest.enabled"] = true`. **Switch User** لم يُبنَ كـmethod مستقل عمدًا — هو Logout+Login مُركَّب من الـUI (نفس المنطق بالضبط، لا داعي لتكرار الكود).
+- [x] Remember Me — جلسة أطول (30 يوم افتراضيًا) بدل القصيرة (8 ساعات)، عبر `rememberMe` flag في Login.
+- [x] Admin/User/ReadOnly roles + Last Admin protection — `IUserManagementService`/`UserManagementService`: `CreateUserAsync`/`DeactivateUserAsync`/`ChangeRoleAsync`، كلها بترفض العملية لو هتسيب صفر Admin نشط (SAD §180، مُتحقَّق بـ4 اختبارات فعلية). `DefaultPermissionEvaluator` (Security/Permissions) — الـmatrix الفعلي المؤجل من Phase 1، مبني من SAD §13 (Admin=كل الصلاحيات، User=بدون Settings.Write، ReadOnly/Guest=قراءة فقط).
+- [x] Password hashing عبر Argon2id (`Konscious.Security.Cryptography.Argon2`) — كان جاهز من Phase 1، اتربط فعليًا بمسار Login/CreateUser.
+- [x] Login UI — أول مشروع WPF في الحل (`Darhous.Archive.Desktop`): شاشة Login حسب UI/UX §91 (Minimal، بدون صور خلفية)، Theme system كامل (Light/Dark tokens من UI/UX §22-27، Typography §29-31، RTL افتراضي)، `ThemeManager` بيقرأ إعداد Windows الفعلي (Registry) لما يكون Theme=System. **First-Run Bootstrap**: لو مفيش Admin نشط، بينشئ حساب "admin" بكلمة مرور عشوائية تُعرض مرة واحدة فقط (MessageBox) مع `must_change_password=true` — لأن `app_users` تبدأ فاضية بعد الـMigration ومفيش طريقة تانية لأول دخول.
+- [x] **DB إضافات**: Migration جديدة `user_sessions` (DB Spec §21) + Migration Seed لـ4 الأدوار الأساسية (admin/user/readonly/guest — DB Spec §18) + `IAppUserRepository`/`AppUserRepository`، `ISessionRepository`/`SessionRepository` (نفس نمط Dual-mode بتاع RoleRepository من Phase 2) + `IUnitOfWorkContext.Users`/`.Sessions`.
+- [x] 60 اختبار جديد (31 Security.Tests + تحديث/إضافة في Persistence.Tests)، **91 اختبار على مستوى الحل بالكامل**، Release build نظيف.
+- **تحقق تشغيلي فعلي:** شُغِّل الـexe المبني فعليًا (مش Test فقط) — الـLog أظهر Startup ناجح، Migrations اشتغلت، First-Run Admin اتنشأ فعليًا بدون أي Exception. التحقق البصري الكامل (screenshot تفاعلي للشاشة) لم يُنفَّذ — يحتاج موافقة تفاعلية من Ahmed على الجهاز نفسه لصلاحية التحكم بالشاشة (computer-use)، وده مش مناسب لتدفق تنفيذ مستمر بدون تدخل. **موصى به:** Ahmed يشغّل `src/Darhous.Archive.Desktop/bin/Debug/net10.0-windows/Darhous.Archive.Desktop.exe` بنفسه للتأكد البصري من الشاشة عند أول فرصة.
 
 ### Phase 4 — Audit `[ ]`
 *مرجع: §36*
@@ -370,4 +374,5 @@ Performance → Installer
 2026-09-11 — Phase 0 اتدفعت على main (github.com/Darhous/archive) بعد تأكيد Ahmed. Ahmed أعطى تفويض Multi-Agent Orchestration (C:\AI-AgentFlow-Test — تم التحقق: claude/codex/agy CLIs شغّالين فعليًا) + أمر بالاستمرار المتواصل حتى Phase 22 بدون توقف للقرارات الروتينية. قواعد التشغيل اتسجلت في §0.1 من هذا الملف.
 2026-09-11 — Phase 1 (Core Foundation) مكتملة: 5 مشاريع جديدة/ممتدة (Contracts, Core موسّع, Application, Configuration, Security) — Result/Error model, Correlation (AsyncLocal), IEventBus + InMemoryEventBus (Transient-only، Reliable/Critical يرفضان صراحة لحد الـOutbox)، IHealthContributor/HealthRegistry، IBackgroundJob/IJobContext، IArchiveModule/ModuleRegistry، UserRole/Permission/IPermissionEvaluator، Argon2idPasswordHasher فعلي، DpapiSecretProtector فعلي، Dispatcher (reflection-based command/query routing). 33/33 اختبار ناجح، 0 warnings (TreatWarningsAsErrors). جاري الـcommit+push، بعدها مباشرة Phase 2.
 2026-09-11 — Phase 2 (Persistence Foundation) مكتملة: راجعتها الـ3 نماذج عبر AgentFlow (Level 4 — قرار: الإبقاء على تقسيم الـ3 قواعد بيانات، رفض توصية Gemini بدمجها في ملف واحد لأنه قرار معماري سابق ومعتمد في SAD/DB Spec). Darhous.Archive.Persistence مشروع جديد كامل: SqliteConnectionFactory (WAL+FK+busy_timeout)، MigrationRunnerFactory (Runner مستقل لكل DB، Tag-based)، أول Migration SQL خام (11 جدول، ON DELETE من §107.1، فهارس §99)، SqliteWriteQueue (Channel-based، اتصال كتابة واحد لكل DB)، SqliteUnitOfWork/IUnitOfWorkContext، RoleRepository (Dapper)، OutboxWriter/OutboxEventBus (استبدل InMemoryEventBus، Reliable/Critical بقوا شغّالين فعليًا)، SqliteDatabaseHealthContributor × 3. اكتُشف وأُصلح Bug حقيقي: FluentMigrator يرمي استثناء لو DB معندهاش Migrations مطابقة، فـaudit.db/search.db اتأجل تشغيل الـMigrator بتاعهم لحد Phase 4/8. عدّلت الوثيقة الأم (outbox_events.delivery_level، فهرس COALESCE لأسماء الفولدرات). 33 اختبار جديد، 66/66 على مستوى الحل، Release build نظيف. جاري commit+push، بعدها Phase 3.
+2026-09-11 — Phase 3 (Authentication & Roles) مكتملة: Migrations جديدة (user_sessions، Seed لـ4 أدوار)، AppUserRepository/SessionRepository (نفس نمط Dual-mode)، AuthenticationService (Login بخطأ عام موحّد ضد Credential Enumeration، Lockout 5 محاولات/15 دقيقة، Session tokens SHA-256، Remember Me)، UserManagementService (Last Admin Protection مُتحقَّق بـ4 اختبارات)، DefaultPermissionEvaluator (الـmatrix الفعلي المؤجل من Phase 1). أول مشروع WPF في الحل: Darhous.Archive.Desktop — Login UI حسب UI/UX §91، Theme system (Light/Dark/RTL)، First-Run Bootstrap (Admin افتراضي بكلمة مرور عشوائية معروضة مرة واحدة). اكتُشفت مشكلة C# حقيقية: namespace التصادم بين "Darhous.Archive.Application" (مشروعنا) و"System.Windows.Application" (WPF) — الحل: fully-qualify صريح، مش global alias (الـalias مالوش أولوية على enclosing-namespace member lookup). 60 اختبار جديد، 91/91 على مستوى الحل. شُغِّل الـexe فعليًا (مش Tests بس) وأكَّد نجاح الـstartup من الـlogs. جاري commit+push، بعدها Phase 4.
 ```

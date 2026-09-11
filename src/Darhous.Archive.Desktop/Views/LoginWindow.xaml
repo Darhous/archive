@@ -1,0 +1,57 @@
+<Window x:Class="Darhous.Archive.Desktop.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Darhous Smart Archive"
+        Height="480" Width="380"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        FlowDirection="RightToLeft"
+        Background="{DynamicResource AppBackgroundBrush}">
+    <!-- UI/UX §91 Login Screen: "Minimal جدًا" — logo, app name, username, password,
+         remember-me, login, guest (when enabled). No background imagery. -->
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    </Window.Resources>
+    <Grid Margin="40">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="24" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="16" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Darhous Smart Archive" Style="{StaticResource BrandHeadingText}"
+                   HorizontalAlignment="Center" />
+
+        <TextBox Grid.Row="2" x:Name="UsernameBox"
+                  Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                  AutomationProperties.Name="اسم المستخدم" />
+
+        <PasswordBox Grid.Row="4" x:Name="PasswordBox"
+                      KeyDown="PasswordBox_KeyDown"
+                      AutomationProperties.Name="كلمة المرور" />
+
+        <CheckBox Grid.Row="6" Content="تذكرني" IsChecked="{Binding RememberMe}" />
+
+        <TextBlock Grid.Row="8" Text="{Binding ErrorMessage}" Style="{StaticResource SecondaryText}"
+                    Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap"
+                    Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}" />
+
+        <Button Grid.Row="10" Content="دخول" Style="{StaticResource PrimaryButton}"
+                Command="{Binding LoginCommand}" CommandParameter="{Binding ElementName=PasswordBox, Path=Password}"
+                IsEnabled="{Binding CanSubmit}" />
+
+        <Button Grid.Row="12" Content="Guest Mode" Style="{StaticResource LinkButton}"
+                Command="{Binding ContinueAsGuestCommand}"
+                Visibility="{Binding GuestModeAvailable, Converter={StaticResource BoolToVisibility}}" />
+    </Grid>
+</Window>

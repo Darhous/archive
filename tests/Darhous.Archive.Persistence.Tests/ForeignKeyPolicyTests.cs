@@ -120,8 +120,12 @@ public class ForeignKeyPolicyTests : PersistenceTestBase
     private async Task<SqliteConnection> OpenAsync() =>
         await new SqliteConnectionFactory(Options).OpenAsync(DatabaseKind.Archive, CancellationToken.None);
 
-    private static async Task<long> InsertRoleAsync(SqliteConnection connection, string code = "user")
+    // "admin"/"user"/"readonly"/"guest" are seeded by M202609110003_SeedRoles (Phase 3) —
+    // default to a fresh, never-colliding code so tests here don't depend on the seed data.
+    private static async Task<long> InsertRoleAsync(SqliteConnection connection, string? code = null)
     {
+        code ??= $"test-role-{Guid.NewGuid():N}";
+
         await ExecuteAsync(connection,
             "INSERT INTO roles (uid, code, display_name, is_system, created_at) VALUES (@Uid, @Code, @DisplayName, 0, @Now);",
             ("@Uid", Guid.NewGuid().ToString()), ("@Code", code), ("@DisplayName", code), ("@Now", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));

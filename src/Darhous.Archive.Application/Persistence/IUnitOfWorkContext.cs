@@ -9,5 +9,9 @@ public interface IUnitOfWorkContext
 {
     IRoleRepository Roles { get; }
 
+    IAppUserRepository Users { get; }
+
+    ISessionRepository Sessions { get; }
+
     IOutboxWriter Outbox { get; }
 }
