@@ -35,11 +35,12 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية:** Phase 3 (Authentication & Roles) مكتملة، جاري تجهيز الـCommit والدفع، ثم Phase 4 (Audit) مباشرة (راجع §0.1 قواعد التشغيل).
-- **Repository:** https://github.com/Darhous/archive — Phase 0/1/2 مدفوعة على `main`، CI شغّال.
-- **آخر مرحلة مكتملة:** Phase 3 — Authentication & Roles (محليًا؛ 91/91 اختبار ناجح على مستوى الحل، Release build نظيف، تحقق تشغيلي فعلي للـexe).
-- **العمل القادم:** Commit + Push لـPhase 3، ثم Phase 4 — Audit (§36): audit.db، Audit service حقيقي (Critical immediate writes + Buffered normal writes)، تسجيل login/logout/search/sort/filter/add/move/delete من أول نسخة تشغيلية، Audit viewer query.
-- **عوائق مفتوحة:** لا يوجد. **دين تقني متبقٍ** (§142): `outbox_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود). **ملاحظة:** حساب Admin افتراضي اتنشأ فعليًا على %ProgramData% الجهاز الحقيقي أثناء اختبار التشغيل — كلمة المرور العشوائية اتعرضت مرة واحدة واتقفلت قبل الالتقاط. Ahmed يقدر يمسح `%ProgramData%\DarhousSmartArchive` لإعادة البدء من الصفر، أو يشغّل التطبيق ويلتقط الشاشة بنفسه.
+- **المرحلة الحالية (CHECKPOINT — 2026-09-12):** Phase 4 (Audit) **مكتملة محليًا، 97/97 اختبار ناجح، لسه مش متعمّلها Commit/Push**. ده checkpoint صريح طلبه Ahmed — لو الجلسة اتقطعت، ابدأ من هنا بالظبط: (1) شغّل `git status` تأكد التغييرات لسه موجودة، (2) اعمل `git add -A` + commit بنفس أسلوب رسائل Commit السابقة (راجع تاريخ commits Phase 1-3) + push، (3) بعدها كمّل Phase 5 — Document Core (§37-38).
+- **Repository:** https://github.com/Darhous/archive — Phase 0/1/2/3 مدفوعة على `main`، CI شغّال. Phase 4 لسه محليًا بس.
+- **آخر مرحلة مكتملة (مدفوعة):** Phase 3 — Authentication & Roles.
+- **آخر مرحلة مكتملة (محليًا، لسه مش مدفوعة):** Phase 4 — Audit (97/97 اختبار، تفاصيل كاملة في قسم Phase 4 تحت).
+- **العمل القادم:** Commit + Push لـPhase 4 (لو مكملتش إنت)، ثم Phase 5 — Document Core (§37-38): Document entity/Version entity/Archive number، Managed storage + Indexed-in-place، Hash (SHA-256) + Duplicate detection، Recycle Bin + Restore، Version history، `IFileStorageService`.
+- **عوائق مفتوحة:** لا يوجد. **ديون تقنية متبقية** (§142): `outbox_events.user_id` و`audit_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود لكل واحد) — هيتحلوا لما نبني lookup فعلي بين Guid uid والـinternal id، مش عاجل. **ملاحظة قديمة:** حساب Admin افتراضي اتنشأ على %ProgramData% الجهاز الحقيقي وقت اختبار Phase 3 — كلمة المرور اتعرضت مرة واحدة واتقفلت قبل الالتقاط؛ امسح `%ProgramData%\DarhousSmartArchive` لو عايز تبدأ من الصفر.
 
 ---
 
@@ -163,12 +164,16 @@ Performance → Installer
 - [x] 60 اختبار جديد (31 Security.Tests + تحديث/إضافة في Persistence.Tests)، **91 اختبار على مستوى الحل بالكامل**، Release build نظيف.
 - **تحقق تشغيلي فعلي:** شُغِّل الـexe المبني فعليًا (مش Test فقط) — الـLog أظهر Startup ناجح، Migrations اشتغلت، First-Run Admin اتنشأ فعليًا بدون أي Exception. التحقق البصري الكامل (screenshot تفاعلي للشاشة) لم يُنفَّذ — يحتاج موافقة تفاعلية من Ahmed على الجهاز نفسه لصلاحية التحكم بالشاشة (computer-use)، وده مش مناسب لتدفق تنفيذ مستمر بدون تدخل. **موصى به:** Ahmed يشغّل `src/Darhous.Archive.Desktop/bin/Debug/net10.0-windows/Darhous.Archive.Desktop.exe` بنفسه للتأكد البصري من الشاشة عند أول فرصة.
 
-### Phase 4 — Audit `[ ]`
+### Phase 4 — Audit `[x]`
 *مرجع: §36*
-- [ ] audit.db + Audit service
-- [ ] Critical immediate writes + Buffered normal writes
-- [ ] تسجيل من أول نسخة: login, logout, search, sort, filter, add, move, delete
-- [ ] Audit viewer query + Export hooks
+- [x] audit.db + Audit service — مشروع جديد `Darhous.Archive.Audit` (منفصل عن Persistence حسب هيكل الحل §5)، Migration جديدة لـ`audit_events` (DB Spec §82، تاجت "Audit")، مُضاف لـ`PersistenceInitializer.DatabasesWithMigrations`.
+- [x] Critical immediate writes + Buffered normal writes — `BufferedAuditService` (BackgroundService): Critical actions (DB Spec §106 — login/failed_login/delete/permanent_delete/restore/settings_change/plugin_install/plugin_remove/backup/app_update) تُكتب فورًا ومتزامنة عبر الـWrite Queue؛ الباقي بيتجمّع في Channel ويتفرّغ كل 2 ثانية أو عند 200 عنصر.
+- [x] تسجيل من أول نسخة: **login/logout فعليًا مربوطين** (`AuthenticationService` بقى بياخد `IAuditService` ويسجل Login (نجاح/فشل بنفس رسالة الخطأ) وLogout). **search/sort/filter/add/move/delete لسه مش مربوطين** — البنية التحتية جاهزة بالكامل (`IAuditService`/`AuditEntry`/`AuditAction` constants) لكن المزايا نفسها (Search=Phase 8، Documents=Phase 5، Folders=Phase 6) لسه مبنيتش، فمفيش حاجة تُسجَّل عنها دلوقتي — هيتربطوا تلقائيًا مع كل Phase بتبنيهم.
+- [x] Audit viewer query — `IAuditQueryService.QueryAsync` (فلترة بالـAction/User/التاريخ + Pagination، ترتيب الأحدث أولًا).
+- [x] Export hooks — **تفسير**: `IAuditQueryService` نفسه هو الـHook (بيرجّع بيانات منظّمة أي طبقة Export مستقبلية تقدر تستهلكها مباشرة)، مفيش طبقة Export فعلية لسه (دي فعليًا Phase 17 — Reports & Export) ولا داعي تتكرر هنا.
+- [x] **قاعدة تصميم مهمة اتطبّقت**: الـAudit write بيحصل **بعد** الـ`IUnitOfWork.ExecuteAsync` مش جواه، لأن audit.db وarchive.db قاعدتين منفصلتين فعليًا (مفيش Transaction واحدة عبر ملفين SQLite — نفس القيد اللي ظهر في مراجعة Phase 2).
+- [x] 5 اختبار جديد (`Darhous.Archive.Audit.Tests`)، **97/97 اختبار على مستوى الحل بالكامل**.
+- **دين تقني موروث**: `audit_events.user_id` لسه NULL دايمًا (نفس مشكلة `outbox_events.user_id` من Phase 2/3 — الهوية الكاملة محفوظة عبر `username_snapshot`/`role_snapshot` بدل الـFK، وده أصلاً التصميم الموثّق في DB Spec).
 
 ### Phase 5 — Document Core `[ ]`
 *مرجع: §37-38*
@@ -375,4 +380,5 @@ Performance → Installer
 2026-09-11 — Phase 1 (Core Foundation) مكتملة: 5 مشاريع جديدة/ممتدة (Contracts, Core موسّع, Application, Configuration, Security) — Result/Error model, Correlation (AsyncLocal), IEventBus + InMemoryEventBus (Transient-only، Reliable/Critical يرفضان صراحة لحد الـOutbox)، IHealthContributor/HealthRegistry، IBackgroundJob/IJobContext، IArchiveModule/ModuleRegistry، UserRole/Permission/IPermissionEvaluator، Argon2idPasswordHasher فعلي، DpapiSecretProtector فعلي، Dispatcher (reflection-based command/query routing). 33/33 اختبار ناجح، 0 warnings (TreatWarningsAsErrors). جاري الـcommit+push، بعدها مباشرة Phase 2.
 2026-09-11 — Phase 2 (Persistence Foundation) مكتملة: راجعتها الـ3 نماذج عبر AgentFlow (Level 4 — قرار: الإبقاء على تقسيم الـ3 قواعد بيانات، رفض توصية Gemini بدمجها في ملف واحد لأنه قرار معماري سابق ومعتمد في SAD/DB Spec). Darhous.Archive.Persistence مشروع جديد كامل: SqliteConnectionFactory (WAL+FK+busy_timeout)، MigrationRunnerFactory (Runner مستقل لكل DB، Tag-based)، أول Migration SQL خام (11 جدول، ON DELETE من §107.1، فهارس §99)، SqliteWriteQueue (Channel-based، اتصال كتابة واحد لكل DB)، SqliteUnitOfWork/IUnitOfWorkContext، RoleRepository (Dapper)، OutboxWriter/OutboxEventBus (استبدل InMemoryEventBus، Reliable/Critical بقوا شغّالين فعليًا)، SqliteDatabaseHealthContributor × 3. اكتُشف وأُصلح Bug حقيقي: FluentMigrator يرمي استثناء لو DB معندهاش Migrations مطابقة، فـaudit.db/search.db اتأجل تشغيل الـMigrator بتاعهم لحد Phase 4/8. عدّلت الوثيقة الأم (outbox_events.delivery_level، فهرس COALESCE لأسماء الفولدرات). 33 اختبار جديد، 66/66 على مستوى الحل، Release build نظيف. جاري commit+push، بعدها Phase 3.
 2026-09-11 — Phase 3 (Authentication & Roles) مكتملة: Migrations جديدة (user_sessions، Seed لـ4 أدوار)، AppUserRepository/SessionRepository (نفس نمط Dual-mode)، AuthenticationService (Login بخطأ عام موحّد ضد Credential Enumeration، Lockout 5 محاولات/15 دقيقة، Session tokens SHA-256، Remember Me)، UserManagementService (Last Admin Protection مُتحقَّق بـ4 اختبارات)، DefaultPermissionEvaluator (الـmatrix الفعلي المؤجل من Phase 1). أول مشروع WPF في الحل: Darhous.Archive.Desktop — Login UI حسب UI/UX §91، Theme system (Light/Dark/RTL)، First-Run Bootstrap (Admin افتراضي بكلمة مرور عشوائية معروضة مرة واحدة). اكتُشفت مشكلة C# حقيقية: namespace التصادم بين "Darhous.Archive.Application" (مشروعنا) و"System.Windows.Application" (WPF) — الحل: fully-qualify صريح، مش global alias (الـalias مالوش أولوية على enclosing-namespace member lookup). 60 اختبار جديد، 91/91 على مستوى الحل. شُغِّل الـexe فعليًا (مش Tests بس) وأكَّد نجاح الـstartup من الـlogs. جاري commit+push، بعدها Phase 4.
+2026-09-12 — Phase 4 (Audit) مكتملة: مشروع جديد Darhous.Archive.Audit (منفصل عن Persistence حسب هيكل الحل)، Migration audit_events (DB Spec §82)، BufferedAuditService (Critical actions §106 تُكتب فورًا، الباقي Buffered كل 2 ثانية/200 عنصر عبر Channel)، IAuditQueryService (فلترة+Pagination). ربطنا Login/Logout الفعليين في AuthenticationService بالـAudit (خارج الـUnitOfWork لأن audit.db وarchive.db قاعدتين منفصلتين). search/sort/filter/add/move/delete لسه مش مربوطين لأن المزايا نفسها (Search/Documents/Folders) لسه مبنيتش — هيتربطوا مع كل Phase. 5 اختبار جديد، 97/97 على مستوى الحل. **CHECKPOINT بطلب Ahmed — الشغل ده لسه مش متعمّله commit/push وقت كتابة السطر ده.**
 ```

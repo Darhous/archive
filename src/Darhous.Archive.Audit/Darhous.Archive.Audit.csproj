@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Darhous.Archive.Core\Darhous.Archive.Core.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Contracts\Darhous.Archive.Contracts.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Persistence\Darhous.Archive.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

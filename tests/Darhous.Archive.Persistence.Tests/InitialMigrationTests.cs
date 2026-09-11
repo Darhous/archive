@@ -24,18 +24,25 @@ public class InitialMigrationTests : PersistenceTestBase
     }
 
     [Fact]
-    public async Task AuditDb_And_SearchDb_HaveNoArchiveTablesLeaked()
+    public async Task AuditDb_HasOnlyItsOwnTables_NoArchiveTablesLeaked()
     {
         // Safety net for the tag-filtering design (MigrationRunnerFactory + PersistenceInitializer's
-        // DatabasesWithMigrations list): if the "Archive" tag were ever misconfigured, or if
-        // Audit/Search were mistakenly added to DatabasesWithMigrations before they have their
-        // own migrations, this is what would catch an archive table silently appearing in the
-        // wrong database file. They have zero tables in Phase 2 — their real schemas arrive in
-        // Phase 4 (Audit) and Phase 8 (Search).
+        // DatabasesWithMigrations list): if the "Archive"/"Audit" tags were ever misconfigured,
+        // this is what would catch an archive table silently appearing in audit.db (or vice versa).
         var auditTables = await GetTableNamesAsync(DatabaseKind.Audit);
+
+        Assert.Equal(["audit_events", "schema_migrations"], auditTables.OrderBy(t => t));
+        Assert.DoesNotContain("documents", auditTables);
+        Assert.DoesNotContain("roles", auditTables);
+    }
+
+    [Fact]
+    public async Task SearchDb_HasNoTablesYet()
+    {
+        // search.db's real schema arrives in Phase 8 — until then it should have nothing
+        // beyond what WAL init touches (no tables at all).
         var searchTables = await GetTableNamesAsync(DatabaseKind.Search);
 
-        Assert.Empty(auditTables);
         Assert.Empty(searchTables);
     }
 

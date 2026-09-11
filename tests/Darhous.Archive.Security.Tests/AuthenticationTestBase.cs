@@ -1,4 +1,5 @@
 using Darhous.Archive.Application.Persistence;
+using Darhous.Archive.Audit.Writing;
 using Darhous.Archive.Core.Permissions;
 using Darhous.Archive.Core.Time;
 using Darhous.Archive.Persistence;
@@ -22,7 +23,9 @@ public abstract class AuthenticationTestBase : IAsyncLifetime
     private readonly string _tempDirectory =
         Path.Combine(Path.GetTempPath(), "darhous-auth-tests", Guid.NewGuid().ToString("N"));
 
-    private SqliteWriteQueue? _writeQueue;
+    private SqliteWriteQueue? _archiveWriteQueue;
+    private SqliteWriteQueue? _auditWriteQueue;
+    private BufferedAuditService? _auditService;
 
     protected PersistenceOptions Options { get; private set; } = null!;
     protected IUnitOfWork UnitOfWork { get; private set; } = null!;
@@ -38,19 +41,37 @@ public abstract class AuthenticationTestBase : IAsyncLifetime
         Options = new PersistenceOptions { DataDirectory = _tempDirectory };
         await PersistenceInitializer.InitializeAsync(Options, CancellationToken.None);
 
-        _writeQueue = new SqliteWriteQueue(DatabaseKind.Archive, new SqliteConnectionFactory(Options), NullLogger<SqliteWriteQueue>.Instance);
-        await _writeQueue.StartAsync(CancellationToken.None);
+        var connectionFactory = new SqliteConnectionFactory(Options);
 
-        UnitOfWork = new SqliteUnitOfWork(_writeQueue);
-        AuthenticationService = new AuthenticationService(UnitOfWork, PasswordHasher, Clock);
+        _archiveWriteQueue = new SqliteWriteQueue(DatabaseKind.Archive, connectionFactory, NullLogger<SqliteWriteQueue>.Instance);
+        await _archiveWriteQueue.StartAsync(CancellationToken.None);
+
+        _auditWriteQueue = new SqliteWriteQueue(DatabaseKind.Audit, connectionFactory, NullLogger<SqliteWriteQueue>.Instance);
+        await _auditWriteQueue.StartAsync(CancellationToken.None);
+
+        _auditService = new BufferedAuditService(_auditWriteQueue, connectionFactory, Clock, NullLogger<BufferedAuditService>.Instance);
+        await _auditService.StartAsync(CancellationToken.None);
+
+        UnitOfWork = new SqliteUnitOfWork(_archiveWriteQueue);
+        AuthenticationService = new AuthenticationService(UnitOfWork, PasswordHasher, Clock, _auditService);
         UserManagementService = new UserManagementService(UnitOfWork, PasswordHasher);
     }
 
     public async Task DisposeAsync()
     {
-        if (_writeQueue is not null)
+        if (_auditService is not null)
         {
-            await _writeQueue.StopAsync(CancellationToken.None);
+            await _auditService.StopAsync(CancellationToken.None);
+        }
+
+        if (_auditWriteQueue is not null)
+        {
+            await _auditWriteQueue.StopAsync(CancellationToken.None);
+        }
+
+        if (_archiveWriteQueue is not null)
+        {
+            await _archiveWriteQueue.StopAsync(CancellationToken.None);
         }
 
         try

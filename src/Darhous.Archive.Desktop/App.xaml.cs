@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Darhous.Archive.Application;
 using Darhous.Archive.Application.Persistence;
+using Darhous.Archive.Audit;
 using Darhous.Archive.Configuration;
 using Darhous.Archive.Core.Hosting;
 using Darhous.Archive.Desktop.Hosting;
@@ -30,6 +31,7 @@ public partial class App : System.Windows.Application
         var builder = ArchiveHostDefaults.CreateBuilder("Desktop", e.Args);
         builder.Services.AddApplicationLayer();
         builder.Services.AddPersistence();
+        builder.Services.AddAudit();
         builder.Services.AddSecurity();
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginWindow>();

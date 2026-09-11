@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Darhous.Archive.Application/Darhous.Archive.Application.csproj" />
+    <Project Path="src/Darhous.Archive.Audit/Darhous.Archive.Audit.csproj" />
     <Project Path="src/Darhous.Archive.Configuration/Darhous.Archive.Configuration.csproj" />
     <Project Path="src/Darhous.Archive.Contracts/Darhous.Archive.Contracts.csproj" />
     <Project Path="src/Darhous.Archive.Core/Darhous.Archive.Core.csproj" />
@@ -10,6 +11,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Darhous.Archive.Application.Tests/Darhous.Archive.Application.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Audit.Tests/Darhous.Archive.Audit.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Configuration.Tests/Darhous.Archive.Configuration.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Core.Tests/Darhous.Archive.Core.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Persistence.Tests/Darhous.Archive.Persistence.Tests.csproj" />

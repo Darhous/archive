@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -16,8 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Darhous.Archive.Security\Darhous.Archive.Security.csproj" />
-    <ProjectReference Include="..\..\src\Darhous.Archive.Persistence\Darhous.Archive.Persistence.csproj" />
     <ProjectReference Include="..\..\src\Darhous.Archive.Audit\Darhous.Archive.Audit.csproj" />
   </ItemGroup>
 
