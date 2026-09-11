@@ -7328,6 +7328,13 @@ Unique sibling name:
 UNIQUE(parent_id, name_normalized)
 ```
 
+**تصحيح (مراجعة Phase 2):** SQLite يعتبر كل قيمة `NULL` مختلفة عن الأخرى لأغراض `UNIQUE`، فـ`UNIQUE(parent_id, name_normalized)` الحرفي **لا يمنع** فعليًا اسمين متطابقين على مستوى الجذر (`parent_id IS NULL`). التطبيق الفعلي في الـMigration يستخدم فهرس تعبير بدل القيد الحرفي:
+
+```sql
+CREATE UNIQUE INDEX ux_folders_sibling_name
+ON folders(COALESCE(parent_id, 0), name_normalized);
+```
+
 يتم منع Cycle عند Move.
 
 ---
@@ -7976,6 +7983,7 @@ Append-only transitions.
 | id | INTEGER PK |
 | uid | TEXT UNIQUE |
 | event_type | TEXT |
+| delivery_level | TEXT |
 | payload_json | TEXT |
 | correlation_id | TEXT NULL |
 | user_id | INTEGER FK NULL |
@@ -7985,6 +7993,8 @@ Append-only transitions.
 | processed_at | INTEGER NULL |
 | next_retry_at | INTEGER NULL |
 | last_error | TEXT NULL |
+
+`delivery_level` (`reliable` / `critical`) was added during Phase 2 implementation review — SAD §56 (Event Delivery) already defines Critical as needing "retry + explicit acknowledgement" distinct from Reliable, but the original schema had no column to tell them apart at the row level; the outbox processor needs it to pick the right handling per row.
 
 Index:
 

@@ -21,6 +21,22 @@
     <PackageVersion Include="Serilog.Sinks.Debug" Version="3.0.0" />
   </ItemGroup>
 
+  <!-- Persistence: SQLite via Dapper + FluentMigrator (SAD §28, Implementation Plan §10) -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <PackageVersion Include="Dapper" Version="2.1.66" />
+    <PackageVersion Include="FluentMigrator" Version="7.1.0" />
+    <PackageVersion Include="FluentMigrator.Runner" Version="7.1.0" />
+    <PackageVersion Include="FluentMigrator.Runner.SQLite" Version="7.1.0" />
+    <!-- Microsoft.Data.Sqlite 10.0.0 transitively pulls SQLitePCLRaw.lib.e_sqlite3 2.1.11,
+         which has a known high-severity advisory (GHSA-2m69-gcr7-jv3q). Pinned to a fixed
+         version here; CentralPackageTransitivePinningEnabled applies it without needing a
+         direct PackageReference in every consuming project. -->
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
+    <PackageVersion Include="SQLitePCLRaw.core" Version="3.0.5" />
+    <PackageVersion Include="SQLitePCLRaw.provider.e_sqlite3" Version="3.0.5" />
+  </ItemGroup>
+
   <!-- Security: Argon2id password hashing (DB Spec §19, decision log EXECUTION_PLAN §2.5), DPAPI secrets (Implementation Plan §94) -->
   <ItemGroup>
     <PackageVersion Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />

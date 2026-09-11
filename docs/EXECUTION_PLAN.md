@@ -35,11 +35,11 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية:** Phase 1 (Core Foundation) مكتملة، جاري تجهيز الـCommit والدفع، ثم البدء في Phase 2 (Persistence Foundation) فورًا وبشكل متواصل حتى Phase 22 (راجع §0.1 قواعد التشغيل).
-- **Repository:** https://github.com/Darhous/archive — Phase 0 مدفوعة على `main`، CI شغّال.
-- **آخر مرحلة مكتملة:** Phase 1 — Core Foundation (محليًا؛ 33/33 اختبار ناجح، Build نظيف).
-- **العمل القادم:** Commit + Push لـPhase 1، ثم Phase 2 — Persistence Foundation (§32-33): archive.db/audit.db/search.db، FluentMigrator، Dapper repositories، تطبيق ON DELETE policy (§107.1)، أول Migration.
-- **عوائق مفتوحة:** لا يوجد.
+- **المرحلة الحالية:** Phase 2 (Persistence Foundation) مكتملة ومُختبَرة بالكامل (66/66 اختبار). جاري تجهيز الـCommit والدفع، ثم البدء في Phase 3 (Authentication & Roles) فورًا وبشكل متواصل حتى Phase 22 (راجع §0.1 قواعد التشغيل).
+- **Repository:** https://github.com/Darhous/archive — Phase 0 و Phase 1 مدفوعتين على `main`، CI شغّال.
+- **آخر مرحلة مكتملة:** Phase 2 — Persistence Foundation (محليًا؛ 66/66 اختبار ناجح، Release build نظيف).
+- **العمل القادم:** Commit + Push لـPhase 2، ثم Phase 3 — Authentication & Roles (§34-35): Login/Logout/Switch User/Remember Me/Guest Mode، Admin/User/ReadOnly roles + Last Admin protection، ربط Argon2idPasswordHasher الفعلي (موجود من Phase 1) بمسار Login حقيقي، Login UI.
+- **عوائق مفتوحة:** لا يوجد. **دين تقني مسجَّل** (§142): `outbox_events.user_id` غير مربوط بعد بالـuid الفعلي — يُحل عند بناء `IAppUserRepository` في Phase 3.
 
 ---
 
@@ -133,14 +133,24 @@ Performance → Installer
 - **DoD (§131) — الجزء المُغطى في Phase 1:** Logging ✅، DI ✅، Configuration ✅ (abstractions). البقية (App starts فعليًا، archive.db/audit.db، migrations، login، roles، jobs الحقيقية، outbox، shutdown آمن) تُغطى تراكميًا مع Phase 2-4 كما هو موضح أصلاً في §2 من هذا الملف (فجوة "مؤجلة عمدًا" — ليست نقص في Phase 1).
 - **ملاحظة نطاق:** لم يُبنَ بعد: Plugin Host الفعلي (Phase 12)، Outbox/Reliable delivery (Phase 2)، Role→Permission matrix الفعلي (Phase 3)، DB-backed AppSettingsStore (Phase 2). كل ده متعمَّد ومُوثَّق في كل ملف كتعليق `///`.
 
-### Phase 2 — Persistence Foundation `[ ]`
-*مرجع: §32-33*
-- [ ] archive.db, audit.db, search.db
-- [ ] Migrations (FluentMigrator)
-- [ ] Dapper repositories, Transactions, Write queue, Health checks
-- [ ] **تطبيق سياسة ON DELETE من DB Spec §107.1 في كل Migration**
-- [ ] **تفعيل `PRAGMA foreign_keys = ON`**
-- [ ] First migration: roles, app_users, documents, document_versions, folders, tags, document_tags, jobs, outbox_events, app_settings, schema_migrations
+### Phase 2 — Persistence Foundation `[x]`
+*مرجع: §32-33 — القرار التصميمي راجعته الـ3 نماذج عبر AgentFlow (Level 4)، التفاصيل في `.agentflow/task-state.json` (TaskId `20260911-184256-d96307b1`) و§0.1*
+- [x] archive.db, audit.db, search.db — 3 ملفات SQLite مستقلة، WAL مفعّل ومُتحقَّق منه (يرمي استثناء لو فشل)، كل واحدة عندها `SqliteDatabaseHealthContributor`
+- [x] Migrations (FluentMigrator) — Runner مستقل تمامًا لكل DB (مش Runner واحد مشترك بـTags فقط)، `SchemaMigrationsMetadata` يسمّي جدول الإصدارات `schema_migrations` بدل `VersionInfo` الافتراضي
+- [x] Dapper repositories (`IRoleRepository`/`RoleRepository` — الكيان الوحيد المُثبَت في Phase 2 عن قصد)، Transactions (`IUnitOfWork`/`SqliteUnitOfWork` — عملية = عنصر واحد في الـWrite Queue)، Write queue (`SqliteWriteQueue` — `System.Threading.Channels`، اتصال كتابة واحد دائم لكل DB، Connection واحدة فقط تكتب أبدًا = مفيش SQLITE_BUSY داخلي)، Health checks (`SqliteDatabaseHealthContributor` × 3، مسجَّلة كـ`IHealthContributor`)
+- [x] **تطبيق سياسة ON DELETE من DB Spec §107.1 في كل Migration** — مُتحقَّق باختبارات فعلية (Folder delete → SET NULL، Document delete → CASCADE للـVersions/Tags، Role قيد الاستخدام → RESTRICT يمنع الحذف، Current Version قيد الاستخدام → RESTRICT حتى يُعاد تعيينه)
+- [x] **تفعيل `PRAGMA foreign_keys = ON`** — مُتحقَّق باختبار فعلي (`PRAGMA foreign_keys` = 1)
+- [x] First migration: roles, app_users, documents, document_versions, folders, tags, document_tags, jobs, outbox_events, app_settings, schema_migrations — SQL خام (مش Fluent API) لأن SQLite DDL (inline FK، لا ALTER ADD CONSTRAINT) ما بيتوافقش مع الـAbstraction الموحدة لـFluentMigrator
+- [x] **`Darhous.Archive.Application/Persistence/`**: عقود مستقلة عن SQLite (`IUnitOfWork`, `IUnitOfWorkContext`, `IRoleRepository`, `IOutboxWriter`, `Role`) — تحضيرًا لهجرة PostgreSQL/Multi-user مستقبلية (SAD §97) بدون إعادة كتابة
+- [x] **`OutboxEventBus`**: استبدل `InMemoryEventBus` كـ`IEventBus` المسجَّل — Transient لسه زي ما هو، لكن Reliable/Critical بقوا شغالين فعليًا (مش بيرموا `NotSupportedException` تاني) عبر outbox_events transactional
+- [x] 33 اختبار جديد (66/66 على مستوى الحل كله)، Release build نظيف 0 warnings
+
+**فجوات/قرارات وُلدت أثناء التنفيذ (اتسجلت كتعديلات في الوثيقة الأم):**
+- إضافة عمود `outbox_events.delivery_level` (كان ناقص، لازم للتفرقة بين Reliable/Critical processing)
+- إصلاح NULL-uniqueness gotcha لأسماء الفولدرات المتشابهة على مستوى الجذر (فهرس تعبير `COALESCE(parent_id, 0)` بدل `UNIQUE` الحرفي)
+- FluentMigrator يرمي `MissingMigrationsException` لو DB معينة معندهاش أي Migration مطابق لـTag بتاعها (مش no-op زي ما كان متوقع) — `PersistenceInitializer` بقى بيشغّل الـMigrator بس للـDBs اللي فعلاً عندها Migrations (`archive.db` بس دلوقتي؛ `audit.db`/`search.db` هيتضافوا لما Phase 4/8 يضيفوا أول Migration بتاعتهم)
+- مكتبة Argon2id تحتاج Persistence.Tests على `net10.0-windows` (DPAPI Windows-only بالفعل من Phase 1)
+- TODO مسجَّل (Technical Debt Policy §142): `outbox_events.user_id` لسه مش متربط بـGuid uid الفعلي — محتاج `IAppUserRepository` من Phase 3
 
 ### Phase 3 — Authentication & Roles `[ ]`
 *مرجع: §34-35*
@@ -359,4 +369,5 @@ Performance → Installer
 2026-09-11 — Phase 0 (Bootstrap) مكتملة محليًا: Repository structure, .slnx solution, Directory.Build.props/Packages.props, global.json (net 10.0.302), .editorconfig, .gitignore, Darhous.Archive.Core + ArchiveHostDefaults (Serilog+Hosting bootstrap), Darhous.Archive.Core.Tests (2/2 tests passed), CI workflow (windows-latest), README, LICENSE. dotnet build/test نجحا محليًا. لسه محتاج git init + push لـ GitHub.
 2026-09-11 — Phase 0 اتدفعت على main (github.com/Darhous/archive) بعد تأكيد Ahmed. Ahmed أعطى تفويض Multi-Agent Orchestration (C:\AI-AgentFlow-Test — تم التحقق: claude/codex/agy CLIs شغّالين فعليًا) + أمر بالاستمرار المتواصل حتى Phase 22 بدون توقف للقرارات الروتينية. قواعد التشغيل اتسجلت في §0.1 من هذا الملف.
 2026-09-11 — Phase 1 (Core Foundation) مكتملة: 5 مشاريع جديدة/ممتدة (Contracts, Core موسّع, Application, Configuration, Security) — Result/Error model, Correlation (AsyncLocal), IEventBus + InMemoryEventBus (Transient-only، Reliable/Critical يرفضان صراحة لحد الـOutbox)، IHealthContributor/HealthRegistry، IBackgroundJob/IJobContext، IArchiveModule/ModuleRegistry، UserRole/Permission/IPermissionEvaluator، Argon2idPasswordHasher فعلي، DpapiSecretProtector فعلي، Dispatcher (reflection-based command/query routing). 33/33 اختبار ناجح، 0 warnings (TreatWarningsAsErrors). جاري الـcommit+push، بعدها مباشرة Phase 2.
+2026-09-11 — Phase 2 (Persistence Foundation) مكتملة: راجعتها الـ3 نماذج عبر AgentFlow (Level 4 — قرار: الإبقاء على تقسيم الـ3 قواعد بيانات، رفض توصية Gemini بدمجها في ملف واحد لأنه قرار معماري سابق ومعتمد في SAD/DB Spec). Darhous.Archive.Persistence مشروع جديد كامل: SqliteConnectionFactory (WAL+FK+busy_timeout)، MigrationRunnerFactory (Runner مستقل لكل DB، Tag-based)، أول Migration SQL خام (11 جدول، ON DELETE من §107.1، فهارس §99)، SqliteWriteQueue (Channel-based، اتصال كتابة واحد لكل DB)، SqliteUnitOfWork/IUnitOfWorkContext، RoleRepository (Dapper)، OutboxWriter/OutboxEventBus (استبدل InMemoryEventBus، Reliable/Critical بقوا شغّالين فعليًا)، SqliteDatabaseHealthContributor × 3. اكتُشف وأُصلح Bug حقيقي: FluentMigrator يرمي استثناء لو DB معندهاش Migrations مطابقة، فـaudit.db/search.db اتأجل تشغيل الـMigrator بتاعهم لحد Phase 4/8. عدّلت الوثيقة الأم (outbox_events.delivery_level، فهرس COALESCE لأسماء الفولدرات). 33 اختبار جديد، 66/66 على مستوى الحل، Release build نظيف. جاري commit+push، بعدها Phase 3.
 ```
