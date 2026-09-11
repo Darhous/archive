@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Darhous.Archive.Core/Darhous.Archive.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Darhous.Archive.Core.Tests/Darhous.Archive.Core.Tests.csproj" />
+  </Folder>
+</Solution>

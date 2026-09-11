@@ -1,0 +1,30 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Company>Darhous</Company>
+    <Product>Darhous Smart Archive</Product>
+    <Copyright>Copyright © Darhous</Copyright>
+    <NeutralLanguage>ar</NeutralLanguage>
+  </PropertyGroup>
+
+  <!--
+    Core.md §21: Official Core code treats warnings as errors. Test projects and
+    sample/tooling projects are excluded so scaffolding churn there never blocks a build.
+    See docs/EXECUTION_PLAN.md §2 decision log for context.
+  -->
+  <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('.Tests')) and !$(MSBuildProjectFullPath.Contains('\samples\')) and !$(MSBuildProjectFullPath.Contains('\tools\'))">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Optimize>true</Optimize>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>

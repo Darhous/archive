@@ -1,0 +1,42 @@
+## .NET
+bin/
+obj/
+*.user
+*.userosscache
+*.suo
+
+## Visual Studio
+.vs/
+*.VC.db
+*.VC.VC.opendb
+
+## Rider / JetBrains
+.idea/
+
+## VS Code
+.vscode/
+
+## Build output
+artifacts/
+publish/
+*.nupkg
+*.snupkg
+
+## Test results
+TestResults/
+coverage*.xml
+coverage*.info
+*.trx
+
+## Local app data used by dev runs (mirrors %ProgramData%\DarhousSmartArchive)
+.localdata/
+
+## OS
+Thumbs.db
+.DS_Store
+
+## Secrets (never commit)
+*.pfx
+*.snk
+appsettings.*.local.json
+secrets.json
