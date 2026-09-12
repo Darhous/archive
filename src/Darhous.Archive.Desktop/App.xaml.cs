@@ -17,6 +17,7 @@ using Darhous.Archive.Desktop.Hosting;
 using Darhous.Archive.Desktop.Themes;
 using Darhous.Archive.Desktop.ViewModels;
 using Darhous.Archive.Desktop.ViewModels.Explorer;
+using Darhous.Archive.Desktop.ViewModels.Explorer.Preview;
 using Darhous.Archive.Desktop.Views;
 using Darhous.Archive.Persistence;
 using Darhous.Archive.Persistence.Configuration;
@@ -88,11 +89,19 @@ public partial class App : System.Windows.Application
         {
             await MaybeShowOnboardingAsync(args.Principal);
 
+            var previewViewModel = new PreviewViewModel(
+                _host.Services.GetRequiredService<IDocumentRepository>(),
+                _host.Services.GetRequiredService<IDocumentVersionRepository>(),
+                _host.Services.GetRequiredService<Core.Audit.IAuditService>(),
+                _host.Services.GetRequiredService<Core.Audit.IAuditQueryService>(),
+                args.Principal);
+
             var explorerViewModel = new ExplorerViewModel(
                 _host.Services.GetRequiredService<Modules.Folders.IFolderService>(),
                 _host.Services.GetRequiredService<IDocumentRepository>(),
                 _host.Services.GetRequiredService<Modules.Documents.Services.IDocumentService>(),
                 _host.Services.GetRequiredService<Modules.Documents.BulkOperations.IBulkOperationService>(),
+                previewViewModel,
                 args.Principal);
 
             var explorer = new ExplorerWindow(

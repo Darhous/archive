@@ -4,6 +4,7 @@ namespace Darhous.Archive.Contracts.Audit;
 public sealed record AuditQuery(
     Guid? UserId = null,
     string? Action = null,
+    string? EntityUid = null,
     DateTimeOffset? FromTimestamp = null,
     DateTimeOffset? ToTimestamp = null,
     int Skip = 0,

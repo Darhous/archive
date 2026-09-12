@@ -6,6 +6,7 @@ using Darhous.Archive.Core.Text;
 using Darhous.Archive.Modules.Documents.BulkOperations;
 using Darhous.Archive.Modules.Documents.Services;
 using Darhous.Archive.Modules.Folders;
+using Darhous.Archive.Desktop.ViewModels.Explorer.Preview;
 using Darhous.Archive.Security.Sessions;
 
 namespace Darhous.Archive.Desktop.ViewModels.Explorer;
@@ -72,15 +73,26 @@ public sealed partial class ExplorerViewModel : ObservableObject
 
     public bool HasSelection => SelectedDocumentCount > 0;
 
+    public PreviewViewModel Preview { get; }
+
     public ExplorerViewModel(
         IFolderService folderService, IDocumentRepository documentRepository, IDocumentService documentService,
-        IBulkOperationService bulkOperationService, ArchivePrincipal principal)
+        IBulkOperationService bulkOperationService, PreviewViewModel previewViewModel, ArchivePrincipal principal)
     {
         _folderService = folderService;
         _documentRepository = documentRepository;
         _documentService = documentService;
         _bulkOperationService = bulkOperationService;
         _principal = principal;
+        Preview = previewViewModel;
+    }
+
+    /// <summary>Explorer's multi-select (checkbox-style, for bulk actions) and the Preview pane's single "current" document are independent concepts — only an exact single selection drives Preview, matching Windows Explorer's own convention.</summary>
+    public async Task UpdatePreviewForSelectionAsync()
+    {
+        var selected = Documents.Where(d => d.IsSelected).ToList();
+        var target = selected.Count == 1 ? selected[0].Uid : (Guid?)null;
+        await Preview.ShowDocumentAsync(target, CancellationToken.None);
     }
 
     public async Task InitializeAsync()
@@ -117,6 +129,7 @@ public sealed partial class ExplorerViewModel : ObservableObject
         }
 
         await LoadDocumentsForSelectedFolderAsync();
+        Preview.Clear();
         StatusMessage?.Invoke(this, $"تم نقل {selected.Count} مستند إلى سلة المحذوفات.");
     }
 
@@ -133,6 +146,7 @@ public sealed partial class ExplorerViewModel : ObservableObject
             selectedUids, MoveTargetFolder?.Uid, _principal.UserId, CancellationToken.None);
 
         await LoadDocumentsForSelectedFolderAsync();
+        Preview.Clear();
 
         StatusMessage?.Invoke(this, result.IsSuccess
             ? $"تم نقل {selectedUids.Count} مستند. (Undo متاح خلال 30 ثانية — Snapshot: {result.Value})"

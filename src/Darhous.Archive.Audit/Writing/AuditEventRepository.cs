@@ -78,6 +78,12 @@ internal static class AuditEventRepository
             parameters.Add("Action", action);
         }
 
+        if (query.EntityUid is { } entityUid)
+        {
+            conditions.Add("entity_uid = @EntityUid");
+            parameters.Add("EntityUid", entityUid);
+        }
+
         if (query.FromTimestamp is { } from)
         {
             conditions.Add("timestamp >= @From");

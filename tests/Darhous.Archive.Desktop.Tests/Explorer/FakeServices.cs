@@ -1,5 +1,7 @@
 using Darhous.Archive.Application.Persistence;
+using Darhous.Archive.Contracts.Audit;
 using Darhous.Archive.Contracts.Documents;
+using Darhous.Archive.Core.Audit;
 using Darhous.Archive.Core.Permissions;
 using Darhous.Archive.Core.Results;
 using Darhous.Archive.Modules.Documents.BulkOperations;
@@ -37,7 +39,9 @@ internal sealed class FakeDocumentRepository : IDocumentRepository
     public List<Document> AllDocuments { get; } = [];
 
     public Task CreateAsync(Guid uid, NewDocument document, CancellationToken ct) => throw new NotImplementedException();
-    public Task<Document?> GetByUidAsync(Guid uid, CancellationToken ct) => throw new NotImplementedException();
+
+    public Task<Document?> GetByUidAsync(Guid uid, CancellationToken ct) =>
+        Task.FromResult(AllDocuments.FirstOrDefault(d => d.Uid == uid));
     public Task<Document?> GetByArchiveNumberAsync(string archiveNumber, CancellationToken ct) => throw new NotImplementedException();
     public Task SetCurrentVersionAsync(Guid documentUid, Guid versionUid, CancellationToken ct) => throw new NotImplementedException();
     public Task MoveToFolderAsync(Guid documentUid, Guid? folderUid, CancellationToken ct) => throw new NotImplementedException();
@@ -82,4 +86,42 @@ internal sealed class FakeBulkOperationService : IBulkOperationService
     }
 
     public Task<Result> UndoAsync(Guid operationSnapshotUid, CancellationToken ct) => throw new NotImplementedException();
+}
+
+internal sealed class FakeDocumentVersionRepository : IDocumentVersionRepository
+{
+    public List<DocumentVersion> AllVersions { get; } = [];
+
+    public Task<Guid> CreateAsync(NewDocumentVersion version, CancellationToken ct) => throw new NotImplementedException();
+
+    public Task<DocumentVersion?> GetByUidAsync(Guid uid, CancellationToken ct) =>
+        Task.FromResult(AllVersions.FirstOrDefault(v => v.Uid == uid));
+
+    public Task<DocumentVersion?> FindBySha256Async(string sha256, CancellationToken ct) => throw new NotImplementedException();
+    public Task<DocumentVersion?> FindByFilePathAsync(string filePath, CancellationToken ct) => throw new NotImplementedException();
+
+    public Task<IReadOnlyList<DocumentVersion>> ListForDocumentAsync(Guid documentUid, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<DocumentVersion>>(AllVersions.Where(v => v.DocumentUid == documentUid).ToList());
+
+    public Task<IReadOnlyList<DocumentVersion>> ListPendingExtractionAsync(int limit, CancellationToken ct) => throw new NotImplementedException();
+    public Task UpdateExtractionResultAsync(Guid versionUid, string status, int? pageCount, bool? isSearchablePdf, CancellationToken ct) => throw new NotImplementedException();
+}
+
+internal sealed class FakeAuditService : IAuditService
+{
+    public List<AuditEntry> RecordedEntries { get; } = [];
+
+    public Task RecordAsync(AuditEntry entry, CancellationToken cancellationToken)
+    {
+        RecordedEntries.Add(entry);
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakeAuditQueryService : IAuditQueryService
+{
+    public List<AuditEvent> Events { get; } = [];
+
+    public Task<IReadOnlyList<AuditEvent>> QueryAsync(AuditQuery query, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<AuditEvent>>(Events.Where(e => query.EntityUid is null || e.EntityUid == query.EntityUid).ToList());
 }

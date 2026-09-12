@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Darhous.Archive.Application.Persistence;
 using Darhous.Archive.Contracts.Documents;
 using Darhous.Archive.Desktop.ViewModels.Explorer;
+using Darhous.Archive.Desktop.ViewModels.Explorer.Preview;
 using Darhous.Archive.Security.Sessions;
 
 namespace Darhous.Archive.Desktop.Tests.Explorer;
@@ -20,8 +21,10 @@ public class ExplorerViewModelTests
         var documents = new FakeDocumentRepository();
         var docService = new FakeDocumentService();
         var bulk = new FakeBulkOperationService();
+        var preview = new PreviewViewModel(
+            documents, new FakeDocumentVersionRepository(), new FakeAuditService(), new FakeAuditQueryService(), ArchivePrincipal.Guest);
 
-        var viewModel = new ExplorerViewModel(folders, documents, docService, bulk, ArchivePrincipal.Guest);
+        var viewModel = new ExplorerViewModel(folders, documents, docService, bulk, preview, ArchivePrincipal.Guest);
         return (viewModel, folders, documents, docService, bulk);
     }
 

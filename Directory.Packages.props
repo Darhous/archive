@@ -56,6 +56,11 @@
     <PackageVersion Include="MsgReader" Version="6.1.1" />
   </ItemGroup>
 
+  <!-- Phase 11 (Preview): PDF preview via WebView2's built-in Chromium PDF viewer against local files, no server/internet needed (Implementation Plan §59) -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4191.47" />
+  </ItemGroup>
+
   <!-- Testing -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
