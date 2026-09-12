@@ -13,6 +13,11 @@ using Darhous.Archive.Modules.Discovery.WatchFolders;
 using Darhous.Archive.Modules.Documents;
 using Darhous.Archive.Modules.Folders;
 using Darhous.Archive.Modules.Importers;
+using Darhous.Archive.Modules.Plugins;
+using Darhous.Archive.Core.Audit;
+using Darhous.Archive.Core.Events;
+using Darhous.Archive.Core.Time;
+using Darhous.Archive.Modules.Documents.Services;
 using Darhous.Archive.Desktop.Hosting;
 using Darhous.Archive.Desktop.Themes;
 using Darhous.Archive.Desktop.ViewModels;
@@ -48,6 +53,21 @@ public partial class App : System.Windows.Application
         builder.Services.AddDiscoveryModule();
         builder.Services.AddImportersModule();
         builder.Services.AddJobRunner();
+        builder.Services.AddPluginsModule(
+            typeof(App).Assembly.GetName().Version ?? new Version(1, 0, 0),
+            exposeHostServices: registry =>
+            {
+                // Plugin SDK §23 "الخدمات الرسمية" — only the official services that exist
+                // today; the rest of that list (ITagService/ISearchService/IUserContext/
+                // IJobService/INotificationService/ISettingsService/IHealthService) is wired
+                // in here once those modules exist in later phases.
+                var services = _host!.Services;
+                registry.AddSingleton(services.GetRequiredService<IDocumentService>());
+                registry.AddSingleton(services.GetRequiredService<IFolderService>());
+                registry.AddSingleton(services.GetRequiredService<IAuditService>());
+                registry.AddSingleton(services.GetRequiredService<IEventBus>());
+                registry.AddSingleton(services.GetRequiredService<IClock>());
+            });
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginWindow>();
 

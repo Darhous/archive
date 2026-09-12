@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      The one hard rule of this project: it must never reference Persistence, Security, or
+      any Modules project. Third-party plugin authors compile against this assembly ONLY —
+      if a plugin could reference Darhous.Archive.Persistence directly it could open
+      archive.db itself and bypass every permission/audit boundary (Plugin SDK §25:
+      "منع الوصول المباشر للبيانات"). Core is referenced only for Health/Results/Time, which
+      are pure contracts with no data access surface.
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Darhous.Archive.Core\Darhous.Archive.Core.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Contracts\Darhous.Archive.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

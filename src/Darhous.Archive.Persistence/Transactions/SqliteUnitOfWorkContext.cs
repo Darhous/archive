@@ -36,5 +36,7 @@ internal sealed class SqliteUnitOfWorkContext(SqliteConnection connection, Sqlit
 
     public IDiscoveryRunRepository DiscoveryRuns { get; } = new DiscoveryRunRepository(connection, transaction);
 
+    public IPluginRegistryRepository Plugins { get; } = new PluginRegistryRepository(connection, transaction);
+
     public IOutboxWriter Outbox { get; } = new OutboxWriter(connection, transaction);
 }

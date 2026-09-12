@@ -35,5 +35,7 @@ public interface IUnitOfWorkContext
 
     IDiscoveryRunRepository DiscoveryRuns { get; }
 
+    IPluginRegistryRepository Plugins { get; }
+
     IOutboxWriter Outbox { get; }
 }

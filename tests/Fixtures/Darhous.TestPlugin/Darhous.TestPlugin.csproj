@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Mirrors exactly what a real third-party plugin author would reference — the SDK, nothing else. -->
+    <ProjectReference Include="..\..\..\src\Darhous.Archive.PluginSdk\Darhous.Archive.PluginSdk.csproj" />
+  </ItemGroup>
+
+</Project>

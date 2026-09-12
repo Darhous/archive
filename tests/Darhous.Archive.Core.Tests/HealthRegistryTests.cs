@@ -55,4 +55,30 @@ public class HealthRegistryTests
         Assert.Equal(HealthStatus.Failed, reports.Single(r => r.Component == "Scanner").Status);
         Assert.Equal(HealthStatus.Healthy, reports.Single(r => r.Component == "Backup").Status);
     }
+
+    [Fact]
+    public async Task Register_AddsADynamicContributor_IncludedInSubsequentChecks()
+    {
+        var registry = new HealthRegistry([], NullLogger<HealthRegistry>.Instance);
+        var pluginContributor = new FakeContributor("MyPlugin", () => HealthReport.Healthy("MyPlugin"));
+
+        registry.Register(pluginContributor);
+        var reports = await registry.CheckAllAsync(CancellationToken.None);
+
+        Assert.Single(reports);
+        Assert.Equal("MyPlugin", reports[0].Component);
+    }
+
+    [Fact]
+    public async Task Unregister_RemovesADynamicContributor_ExcludedFromLaterChecks()
+    {
+        var registry = new HealthRegistry([], NullLogger<HealthRegistry>.Instance);
+        var pluginContributor = new FakeContributor("MyPlugin", () => HealthReport.Healthy("MyPlugin"));
+        registry.Register(pluginContributor);
+
+        registry.Unregister(pluginContributor);
+        var reports = await registry.CheckAllAsync(CancellationToken.None);
+
+        Assert.Empty(reports);
+    }
 }

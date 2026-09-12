@@ -1,20 +1,24 @@
+using System.Collections.Concurrent;
 using Darhous.Archive.Contracts.Health;
 using Microsoft.Extensions.Logging;
 
 namespace Darhous.Archive.Core.Health;
 
 /// <summary>
-/// Resolves every <see cref="IHealthContributor"/> registered in DI and checks them
-/// independently — one contributor throwing must not hide the others (SAD §5.1).
+/// Resolves every <see cref="IHealthContributor"/> registered in DI (plus any added later via
+/// <see cref="Register"/>, e.g. a dynamically-loaded plugin) and checks them independently —
+/// one contributor throwing must not hide the others (SAD §5.1).
 /// </summary>
 public sealed class HealthRegistry(IEnumerable<IHealthContributor> contributors, ILogger<HealthRegistry> logger)
     : IHealthRegistry
 {
+    private readonly ConcurrentDictionary<IHealthContributor, byte> _dynamicContributors = new();
+
     public async Task<IReadOnlyList<HealthReport>> CheckAllAsync(CancellationToken cancellationToken)
     {
         var reports = new List<HealthReport>();
 
-        foreach (var contributor in contributors)
+        foreach (var contributor in contributors.Concat(_dynamicContributors.Keys))
         {
             try
             {
@@ -29,4 +33,8 @@ public sealed class HealthRegistry(IEnumerable<IHealthContributor> contributors,
 
         return reports;
     }
+
+    public void Register(IHealthContributor contributor) => _dynamicContributors.TryAdd(contributor, 0);
+
+    public void Unregister(IHealthContributor contributor) => _dynamicContributors.TryRemove(contributor, out _);
 }

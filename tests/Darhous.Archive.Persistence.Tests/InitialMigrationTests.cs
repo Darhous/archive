@@ -11,6 +11,7 @@ public class InitialMigrationTests : PersistenceTestBase
         "tags", "document_tags", "jobs", "outbox_events", "app_settings", "schema_migrations",
         "user_sessions", // M202609110002_UserSessions (Phase 3)
         "storage_roots", "source_drives", "source_exclusions", "discovery_runs", "watch_folders", // M202609120002_DiscoverySchema (Phase 9)
+        "plugins", "plugin_permissions", "plugin_settings", // M202609120003_PluginSchema (Phase 12)
     ];
 
     [Fact]

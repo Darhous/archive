@@ -7,6 +7,7 @@
     <Project Path="src/Darhous.Archive.Core/Darhous.Archive.Core.csproj" />
     <Project Path="src/Darhous.Archive.Desktop/Darhous.Archive.Desktop.csproj" />
     <Project Path="src/Darhous.Archive.Persistence/Darhous.Archive.Persistence.csproj" />
+    <Project Path="src/Darhous.Archive.PluginSdk/Darhous.Archive.PluginSdk.csproj" />
     <Project Path="src/Darhous.Archive.Security/Darhous.Archive.Security.csproj" />
   </Folder>
   <Folder Name="/src/Modules/">
@@ -14,6 +15,7 @@
     <Project Path="src/Modules/Darhous.Archive.Modules.Documents/Darhous.Archive.Modules.Documents.csproj" />
     <Project Path="src/Modules/Darhous.Archive.Modules.Folders/Darhous.Archive.Modules.Folders.csproj" />
     <Project Path="src/Modules/Darhous.Archive.Modules.Importers/Darhous.Archive.Modules.Importers.csproj" />
+    <Project Path="src/Modules/Darhous.Archive.Modules.Plugins/Darhous.Archive.Modules.Plugins.csproj" />
   </Folder>
   <Folder Name="/src/OfficialPlugins/">
     <Project Path="src/OfficialPlugins/Darhous.Search.SqliteFts/Darhous.Search.SqliteFts.csproj" />
@@ -28,8 +30,12 @@
     <Project Path="tests/Darhous.Archive.Modules.Documents.Tests/Darhous.Archive.Modules.Documents.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.Folders.Tests/Darhous.Archive.Modules.Folders.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.Importers.Tests/Darhous.Archive.Modules.Importers.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Modules.Plugins.Tests/Darhous.Archive.Modules.Plugins.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Persistence.Tests/Darhous.Archive.Persistence.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Security.Tests/Darhous.Archive.Security.Tests.csproj" />
     <Project Path="tests/Darhous.Search.SqliteFts.Tests/Darhous.Search.SqliteFts.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Fixtures/">
+    <Project Path="tests/Fixtures/Darhous.TestPlugin/Darhous.TestPlugin.csproj" />
   </Folder>
 </Solution>

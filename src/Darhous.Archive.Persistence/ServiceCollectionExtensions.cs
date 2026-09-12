@@ -80,6 +80,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISourceDriveRepository>(sp =>
             new SourceDriveRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
 
+        services.AddSingleton<IPluginRegistryRepository>(sp =>
+            new PluginRegistryRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
+
         services.AddSingleton<InMemoryEventBus>();
         services.AddSingleton<IEventBus, OutboxEventBus>();
 
