@@ -21,5 +21,9 @@ public interface IUnitOfWorkContext
 
     IArchiveNumberGenerator ArchiveNumbers { get; }
 
+    IFolderRepository Folders { get; }
+
+    IOperationSnapshotRepository OperationSnapshots { get; }
+
     IOutboxWriter Outbox { get; }
 }

@@ -22,5 +22,9 @@ internal sealed class SqliteUnitOfWorkContext(SqliteConnection connection, Sqlit
 
     public IArchiveNumberGenerator ArchiveNumbers { get; } = new ArchiveNumberGenerator(connection, transaction);
 
+    public IFolderRepository Folders { get; } = new FolderRepository(connection, transaction);
+
+    public IOperationSnapshotRepository OperationSnapshots { get; } = new OperationSnapshotRepository(connection, transaction);
+
     public IOutboxWriter Outbox { get; } = new OutboxWriter(connection, transaction);
 }

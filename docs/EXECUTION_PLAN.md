@@ -49,11 +49,11 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية:** Phase 5 (Document Core) مكتملة محليًا، 113/113 اختبار ناجح. جاري تجهيز Commit+Push، ثم Phase 6 (Folder System).
-- **Repository:** https://github.com/Darhous/archive — Phase 0-4 مدفوعة على `main` (آخر commit مدفوع: `f606970`)، CI شغّال. Phase 5 لسه محليًا وقت كتابة السطر ده.
-- **آخر مرحلة مكتملة (مدفوعة):** Phase 4 — Audit + قاعدة اقتصاد الـContext (§0.1.1).
-- **آخر مرحلة مكتملة (محليًا):** Phase 5 — Document Core (113/113 اختبار، تفاصيل كاملة في قسم Phase 5 تحت).
-- **العمل القادم:** Commit + Push لـPhase 5، ثم Phase 6 — Folder System (§39): Logical folders + Tree + Subfolders، Move/Rename/Delete rules/Unclassified، Bulk move + Undo snapshot.
+- **المرحلة الحالية:** Phase 6 (Folder System) مكتملة محليًا، 131/131 اختبار ناجح. جاري تجهيز Commit+Push، ثم Phase 7 (Archive Explorer UI).
+- **Repository:** https://github.com/Darhous/archive — Phase 0-5 مدفوعة على `main` (آخر commit مدفوع: `4108c2c`)، CI شغّال. Phase 6 لسه محليًا وقت كتابة السطر ده.
+- **آخر مرحلة مكتملة (مدفوعة):** Phase 5 — Document Core.
+- **آخر مرحلة مكتملة (محليًا):** Phase 6 — Folder System (131/131 اختبار، تفاصيل كاملة في قسم Phase 6 تحت).
+- **العمل القادم:** Commit + Push لـPhase 6، ثم Phase 7 — Archive Explorer UI (§40-41): أول شاشة رئيسية كاملة (Sidebar/Folder tree/Search strip/Document list/Preview placeholder/Breadcrumb/Bulk actions/Density modes/Theme)، ثم Gate إلزامي: 100,000 صف وهمي والـUI يفضل Responsive.
 - **عوائق مفتوحة:** لا يوجد. **ديون تقنية متبقية** (§142): `outbox_events.user_id` و`audit_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود لكل واحد) — هيتحلوا لما نبني lookup فعلي بين Guid uid والـinternal id، مش عاجل. **ملاحظة قديمة:** حساب Admin افتراضي اتنشأ على %ProgramData% الجهاز الحقيقي وقت اختبار Phase 3 — كلمة المرور اتعرضت مرة واحدة واتقفلت قبل الالتقاط؛ امسح `%ProgramData%\DarhousSmartArchive` لو عايز تبدأ من الصفر.
 
 ---
@@ -204,11 +204,14 @@ Performance → Installer
 - **دين تقني موروث**: `documents.created_by`/`updated_by` بيتسجلوا NULL دلوقتي لو الـcaller ما بعتش Guid فعلي (مفيش UI لسه بيبعت المستخدم الحالي — هيتحل مع Explorer UI في Phase 7)
 - **DoD (§132):** ✅ Add/version/hash/duplicate warning/move/trash/restore/permanent delete (Admin-only)/audit/indexed-in-place/managed storage — كل بند اتغطى باختبار فعلي.
 
-### Phase 6 — Folder System `[ ]`
+### Phase 6 — Folder System `[x]`
 *مرجع: §39*
-- [ ] Logical folders + Tree + Subfolders
-- [ ] Move / Rename / Delete rules / Unclassified
-- [ ] Bulk move + Undo snapshot
+- [x] Logical folders + Tree + Subfolders — مشروع جديد `Darhous.Archive.Modules.Folders` (`IFolderService`/`FolderService`)، `IFolderRepository`/`FolderRepository` (Dapper، نفس نمط Dual-mode). Tree عبر `GetChildrenAsync(parentId)` تصاعديًا
+- [x] Move / Rename / Delete rules / Unclassified — منع تكرار الاسم بين الإخوة (فحص مسبق + الفهرس الجزئي `ux_folders_sibling_name` من Phase 2 كخط دفاع ثانٍ)، **منع الدورات (Cycle)** عند Move (تتبع سلسلة الآباء من الهدف المقترح لحد ما توصل للجذر أو تلاقي الفولدر نفسه)، Delete افتراضيًا يرفض لو الفولدر مش فاضي (DB Spec §137)، مع خيار `moveContentsToUnclassified` صريح لنقل الفولدرات الفرعية للجذر والمستندات لـUnclassified (`folder_id = NULL`) قبل الحذف
+- [x] Bulk move + Undo snapshot — Migration جديدة `operation_snapshots` (DB Spec §142)، `IBulkOperationService`/`BulkOperationService` (في `Darhous.Archive.Modules.Documents` لأنه فعليًا عملية على المستندات): `BulkMoveDocumentsAsync` يسجل الفولدر الأصلي لكل مستند في الـSnapshot قبل النقل، `UndoAsync` بيرجّع الكل خلال 30 ثانية بس (نفس القيمة الموثقة)، بعدها `UNDO_WINDOW_EXPIRED`
+- [x] **إصلاح Bug أداء حقيقي اكتشفناه ذاتيًا (مش من مراجعة خارجية)**: أول تنفيذ لـ"نقل مستندات الفولدر المحذوف لـUnclassified" استخدم `context.Documents.ListAsync()` (كل الجدول!) بدل استعلام مفلتر — كان هيبقى كارثة أداء على مليون مستند. اتصلح بإضافة `IDocumentRepository.ListByFolderAsync(folderId)` يستخدم فهرس `folder_id` الموجود من Phase 2 (§99)
+- [x] 18 اختبار جديد (`Darhous.Archive.Modules.Folders.Tests`)، **131/131 اختبار على مستوى الحل بالكامل**
+- **ملاحظة نطاق**: لم نبني "Tags Bulk Update" رغم استخدامه نفس آلية `operation_snapshots` — Tags نفسها (§21 SAD) لسه مبنيتش كـModule (مفيش Phase مخصصة لها في الخطة الحالية؛ الجدول `tags`/`document_tags` موجود في DB من Phase 2 لكن بدون Service layer). هنبنيها لما تيجي فعليًا محتاجة (زي ما عملنا مع Search/Documents/Folders كل واحدة في وقتها).
 
 ### Phase 7 — Archive Explorer UI `[ ]`
 *مرجع: §40-41*
@@ -402,4 +405,5 @@ Performance → Installer
 2026-09-11 — Phase 3 (Authentication & Roles) مكتملة: Migrations جديدة (user_sessions، Seed لـ4 أدوار)، AppUserRepository/SessionRepository (نفس نمط Dual-mode)، AuthenticationService (Login بخطأ عام موحّد ضد Credential Enumeration، Lockout 5 محاولات/15 دقيقة، Session tokens SHA-256، Remember Me)، UserManagementService (Last Admin Protection مُتحقَّق بـ4 اختبارات)، DefaultPermissionEvaluator (الـmatrix الفعلي المؤجل من Phase 1). أول مشروع WPF في الحل: Darhous.Archive.Desktop — Login UI حسب UI/UX §91، Theme system (Light/Dark/RTL)، First-Run Bootstrap (Admin افتراضي بكلمة مرور عشوائية معروضة مرة واحدة). اكتُشفت مشكلة C# حقيقية: namespace التصادم بين "Darhous.Archive.Application" (مشروعنا) و"System.Windows.Application" (WPF) — الحل: fully-qualify صريح، مش global alias (الـalias مالوش أولوية على enclosing-namespace member lookup). 60 اختبار جديد، 91/91 على مستوى الحل. شُغِّل الـexe فعليًا (مش Tests بس) وأكَّد نجاح الـstartup من الـlogs. جاري commit+push، بعدها Phase 4.
 2026-09-12 — Phase 4 (Audit) مكتملة: مشروع جديد Darhous.Archive.Audit (منفصل عن Persistence حسب هيكل الحل)، Migration audit_events (DB Spec §82)، BufferedAuditService (Critical actions §106 تُكتب فورًا، الباقي Buffered كل 2 ثانية/200 عنصر عبر Channel)، IAuditQueryService (فلترة+Pagination). ربطنا Login/Logout الفعليين في AuthenticationService بالـAudit (خارج الـUnitOfWork لأن audit.db وarchive.db قاعدتين منفصلتين). search/sort/filter/add/move/delete لسه مش مربوطين لأن المزايا نفسها (Search/Documents/Folders) لسه مبنيتش — هيتربطوا مع كل Phase. 5 اختبار جديد، 97/97 على مستوى الحل. **CHECKPOINT بطلب Ahmed — الشغل ده لسه مش متعمّله commit/push وقت كتابة السطر ده.**
 2026-09-12 — Ahmed طلب checkpoint (اتعمل، commit `5b04a37`) + قاعدة اقتصاد Context لـMulti-Agent Orchestration (§0.1.1، commit `f606970`) بعد ملاحظة استهلاك توكينز عالي (رد Codex كان فيه سطر ~125K توكِن من tool logs داخلية). Phase 5 (Document Core) بعدها: راجعناها مع Codex (Level 2) قبل التنفيذ — قرار: نقل الملف الفعلي قبل commit الـDB (orphan file أهون من DB record بيشاور على ملف مش موجود)، ورفضنا اقتراحه ببناء Import Operation Journal كامل (over-engineering لتطبيق مستخدم واحد). بنينا: Darhous.Archive.Modules.Documents (IFileStorageService/FileStorageService/DocumentService)، Migrations جديدة (file_path_normalized، number_sequences، recycle_bin_entries)، ArabicNormalization اتنقلت من Phase 8 المخطَّط لأنها لازمة من دلوقتي (title_normalized NOT NULL). ربطنا كل أفعال المستندات بالـAudit (حل دين Phase 4). 16 اختبار جديد، 113/113 على مستوى الحل. جاري commit+push، بعدها Phase 6.
+2026-09-12 — Phase 6 (Folder System) مكتملة: مشروع جديد Darhous.Archive.Modules.Folders (IFolderService/FolderService)، Migration operation_snapshots (DB Spec §142)، IBulkOperationService/BulkOperationService (في Modules.Documents — Bulk Move + Undo خلال 30 ثانية). منع دورات (Cycle) عند نقل فولدر داخل أحد فولدراته الفرعية، منع تكرار الاسم بين الإخوة. اكتشفنا وأصلحنا Bug أداء ذاتيًا (مش من مراجعة خارجية): أول تنفيذ لحذف فولدر مع نقل محتواه استخدم ListAsync() (سحب الجدول كله!) بدل استعلام مفلتر — أضفنا IDocumentRepository.ListByFolderAsync يستخدم الفهرس الموجود. 18 اختبار جديد، 131/131 على مستوى الحل. جاري commit+push، بعدها Phase 7.
 ```

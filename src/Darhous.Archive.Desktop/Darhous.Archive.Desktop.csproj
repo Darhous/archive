@@ -20,6 +20,7 @@
     <ProjectReference Include="..\Darhous.Archive.Persistence\Darhous.Archive.Persistence.csproj" />
     <ProjectReference Include="..\Darhous.Archive.Audit\Darhous.Archive.Audit.csproj" />
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Documents\Darhous.Archive.Modules.Documents.csproj" />
+    <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Folders\Darhous.Archive.Modules.Folders.csproj" />
   </ItemGroup>
 
 </Project>

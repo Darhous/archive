@@ -64,6 +64,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDocumentVersionRepository>(sp =>
             new DocumentVersionRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
 
+        services.AddSingleton<IFolderRepository>(sp =>
+            new FolderRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
+
         services.AddSingleton<InMemoryEventBus>();
         services.AddSingleton<IEventBus, OutboxEventBus>();
 

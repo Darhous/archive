@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Darhous.Archive.Modules.Documents.BulkOperations;
 using Darhous.Archive.Modules.Documents.Services;
 using Darhous.Archive.Modules.Documents.Storage;
 
@@ -11,6 +12,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(options ?? new DocumentStorageOptions());
         services.AddSingleton<IFileStorageService, FileStorageService>();
         services.AddSingleton<IDocumentService, DocumentService>();
+        services.AddSingleton<IBulkOperationService, BulkOperationService>();
 
         return services;
     }

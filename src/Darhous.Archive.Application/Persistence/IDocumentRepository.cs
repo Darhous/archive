@@ -17,6 +17,9 @@ public interface IDocumentRepository
 
     Task<IReadOnlyList<Document>> ListAsync(CancellationToken cancellationToken);
 
+    /// <summary>Non-deleted documents directly in this folder (or Unclassified, if null) — indexed lookup, not a table scan (DB Spec §99: ix_documents_folder_status).</summary>
+    Task<IReadOnlyList<Document>> ListByFolderAsync(Guid? folderId, CancellationToken cancellationToken);
+
     Task SetCurrentVersionAsync(Guid documentUid, Guid versionUid, CancellationToken cancellationToken);
 
     Task MoveToFolderAsync(Guid documentUid, Guid? folderUid, CancellationToken cancellationToken);

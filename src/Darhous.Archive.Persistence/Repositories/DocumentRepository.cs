@@ -97,6 +97,25 @@ public sealed class DocumentRepository : IDocumentRepository
         return readRows.Select(Map).ToList();
     }
 
+    public async Task<IReadOnlyList<Document>> ListByFolderAsync(Guid? folderId, CancellationToken cancellationToken)
+    {
+        var sql = folderId is null
+            ? $"{SelectColumns} WHERE d.folder_id IS NULL AND d.deleted_at IS NULL ORDER BY d.id;"
+            : $"{SelectColumns} WHERE f.uid = @FolderUid AND d.deleted_at IS NULL ORDER BY d.id;";
+        var parameters = new { FolderUid = folderId?.ToString() };
+
+        if (_boundConnection is not null)
+        {
+            var rows = await _boundConnection.QueryAsync<DocumentRow>(
+                new CommandDefinition(sql, parameters, _boundTransaction, cancellationToken: cancellationToken));
+            return rows.Select(Map).ToList();
+        }
+
+        await using var connection = await _connectionFactory!.OpenAsync(DatabaseKind.Archive, cancellationToken);
+        var readRows = await connection.QueryAsync<DocumentRow>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        return readRows.Select(Map).ToList();
+    }
+
     public Task SetCurrentVersionAsync(Guid documentUid, Guid versionUid, CancellationToken cancellationToken)
     {
         RequireWriteMode(nameof(SetCurrentVersionAsync));
