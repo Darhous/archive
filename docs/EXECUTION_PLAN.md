@@ -49,11 +49,11 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية:** Phase 6 (Folder System) مكتملة محليًا، 131/131 اختبار ناجح. جاري تجهيز Commit+Push، ثم Phase 7 (Archive Explorer UI).
-- **Repository:** https://github.com/Darhous/archive — Phase 0-5 مدفوعة على `main` (آخر commit مدفوع: `4108c2c`)، CI شغّال. Phase 6 لسه محليًا وقت كتابة السطر ده.
-- **آخر مرحلة مكتملة (مدفوعة):** Phase 5 — Document Core.
-- **آخر مرحلة مكتملة (محليًا):** Phase 6 — Folder System (131/131 اختبار، تفاصيل كاملة في قسم Phase 6 تحت).
-- **العمل القادم:** Commit + Push لـPhase 6، ثم Phase 7 — Archive Explorer UI (§40-41): أول شاشة رئيسية كاملة (Sidebar/Folder tree/Search strip/Document list/Preview placeholder/Breadcrumb/Bulk actions/Density modes/Theme)، ثم Gate إلزامي: 100,000 صف وهمي والـUI يفضل Responsive.
+- **المرحلة الحالية:** Phase 7 (Archive Explorer UI) مكتملة محليًا، 143/143 اختبار ناجح، Release build نظيف (0 warnings/errors). جاري تجهيز Commit+Push، ثم Phase 8 (Search Foundation).
+- **Repository:** https://github.com/Darhous/archive — Phase 0-6 مدفوعة على `main`، CI شغّال. Phase 7 لسه محليًا وقت كتابة السطر ده.
+- **آخر مرحلة مكتملة (مدفوعة):** Phase 6 — Folder System.
+- **آخر مرحلة مكتملة (محليًا):** Phase 7 — Archive Explorer UI (143/143 اختبار، تفاصيل كاملة في قسم Phase 7 تحت).
+- **العمل القادم:** Commit + Push لـPhase 7، ثم Phase 8 — Search Foundation (§42-44): `Darhous.Search.SqliteFts`, FTS5 indexing (إعادة استخدام ArabicNormalization المبنية بالفعل في Phase 5)، Query/Snippets/Ranking/Filters/Pagination/Rebuild، Debounce 250ms، Search Audit.
 - **عوائق مفتوحة:** لا يوجد. **ديون تقنية متبقية** (§142): `outbox_events.user_id` و`audit_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود لكل واحد) — هيتحلوا لما نبني lookup فعلي بين Guid uid والـinternal id، مش عاجل. **ملاحظة قديمة:** حساب Admin افتراضي اتنشأ على %ProgramData% الجهاز الحقيقي وقت اختبار Phase 3 — كلمة المرور اتعرضت مرة واحدة واتقفلت قبل الالتقاط؛ امسح `%ProgramData%\DarhousSmartArchive` لو عايز تبدأ من الصفر.
 
 ---
@@ -213,12 +213,23 @@ Performance → Installer
 - [x] 18 اختبار جديد (`Darhous.Archive.Modules.Folders.Tests`)، **131/131 اختبار على مستوى الحل بالكامل**
 - **ملاحظة نطاق**: لم نبني "Tags Bulk Update" رغم استخدامه نفس آلية `operation_snapshots` — Tags نفسها (§21 SAD) لسه مبنيتش كـModule (مفيش Phase مخصصة لها في الخطة الحالية؛ الجدول `tags`/`document_tags` موجود في DB من Phase 2 لكن بدون Service layer). هنبنيها لما تيجي فعليًا محتاجة (زي ما عملنا مع Search/Documents/Folders كل واحدة في وقتها).
 
-### Phase 7 — Archive Explorer UI `[ ]`
+### Phase 7 — Archive Explorer UI `[x]`
 *مرجع: §40-41*
-- [ ] Sidebar, Folder tree, Search strip, Document list
-- [ ] Preview placeholder, Breadcrumb, Bulk actions
-- [ ] Density modes, Theme
-- **Gate إلزامي قبل الاستمرار:** UI يبقى responsive مع 100,000 fake rows (virtualization).
+- [x] Sidebar (TreeView) + Folder tree كامل (بناء تكراري من `IFolderService.GetChildrenAsync` — Root ثم كل مستوى تحته)، مع Node ثابت "كل الأرشيف" (فوق) و"غير مصنف" (تحت، `folder_id = NULL`)
+- [x] Search strip — Live filter من نوع Client-side substring على النطاق المحمَّل حاليًا فقط (مش FTS حقيقي بعد — ده Phase 8)، مبني على `ArabicNormalization.Normalize` (نفس الدالة من Phase 5) على النص المكتوب والعنوان معًا، فبيتجاهل تلقائيًا اختلاف الهمزات (أ/إ/آ/ٱ→ا) والتشكيل
+- [x] Document list — `ListView` + `GridView` (رقم الأرشيف/العنوان/الحالة/تاريخ الأرشفة)، مع `VirtualizingPanel.IsVirtualizing/VirtualizationMode=Recycling/ScrollUnit=Item` لدعم الـGate
+- [x] Preview placeholder (يمين، Toggle قابل للإخفاء) — المعاينة الفعلية Phase 11
+- [x] Breadcrumb — بيبني المسار الكامل من فهرس مسارات مبني مرة واحدة عند تحميل شجرة الفولدرات
+- [x] Bulk actions — Bar يظهر بس لما فيه تحديد (`HasSelection`)، فيه: نقل جماعي (`IBulkOperationService.BulkMoveDocumentsAsync` مع اختيار فولدر هدف) وحذف جماعي (نقل لسلة المحذوفات لكل عنصر محدد)
+- [x] Density modes (`Compact`/`Standard`/`Comfortable`) — بيتحكم في الـPadding بتاع كل صف عبر `RowPadding` المرتبط بـ`Density`
+- [x] Theme — استخدام `ThemeManager` الموجود من Phase 3 (Light/Dark/RTL) بدون تعديل جوهري
+- [x] استبدال `WelcomePlaceholderWindow` (Placeholder من Phase 3 بعد تسجيل الدخول) بـ`ExplorerWindow` الحقيقية — الملفين القدام اتحذفوا بالكامل
+- [x] **إصلاح Bug ذاتي (اختبارات فقط، مش الكود الحقيقي)**: `Dictionary<Guid?, T>` بيدّي تحذير CS8714 بس فعليًا بيرمي `ArgumentNullException` وقت التشغيل لو استخدمت `null` كـkey فعلي — مش False Positive زي ما افترضنا الأول. الإصلاح كان في الـTest Fake فقط (`FakeFolderService`) باستخدام `Guid.Empty` كـsentinel لـ"root" بدل `null`؛ الكود الحقيقي (`FolderRepository`) مش متأثر لأنه بيستخدم SQL `WHERE parent_id IS NULL` مباشرة، مفيش Dictionary فيه أصلًا
+- [x] 12 اختبار جديد (`Darhous.Archive.Desktop.Tests`) — بناء الشجرة (مسطحة ومتداخلة)، تحميل "كل الأرشيف" مقابل فولدر محدد، الفلترة الحية (substring + تطبيع عربي)، مسح البحث بيرجّع القائمة الكاملة، الحذف الجماعي بيمسح المحدد بس، النقل الجماعي بيبعت الـUIDs والهدف الصح، Density→RowPadding (Theory على القيم الـ3)
+- **Gate إلزامي قبل الاستمرار — نصفين:**
+  - ✅ **نصف الـData layer (مؤتمت بالكامل):** اختبار `LiveFilter_With100000Documents_CompletesQuickly` — تحميل 100,000 مستند وهمي + تطبيق فلتر حي في أقل من 2000ms (ناجح فعليًا، الـpass الواحد O(n) بدون أي رحلة DB لكل عنصر). هذا يثبت إن طبقة البيانات نفسها (مش الـRendering) سريعة بما يكفي.
+  - ⚠️ **نصف الـRendering/Visual (يحتاج تأكيد Ahmed يدويًا):** الاستجابة البصرية الفعلية أثناء الـScroll مع 100k صف حقيقي على الشاشة — الـ`VirtualizingPanel` مضبوط صح في XAML لكن مفيش جلسة عرض تفاعلية (Interactive display) متاحة في بيئة التنفيذ ده لأختبرها بصريًا. **نفس الملاحظة المتكررة من Phase 3 (Login UI)** — يحتاج Ahmed يجرب الـexe فعليًا على جهازه ويأكد الانطباع البصري.
+- **دين تقني اتحل من Phase 6**: `documents.created_by`/`updated_by` كانت بتتسجل NULL دايمًا — دلوقتي Explorer بيبعت `_principal.UserId` الحقيقي مع كل عملية حذف/نقل.
 
 ### Phase 8 — Search Foundation `[ ]` ⭐ (نهاية أول Milestone استخدام يومي)
 *مرجع: §42-44*
@@ -406,4 +417,5 @@ Performance → Installer
 2026-09-12 — Phase 4 (Audit) مكتملة: مشروع جديد Darhous.Archive.Audit (منفصل عن Persistence حسب هيكل الحل)، Migration audit_events (DB Spec §82)، BufferedAuditService (Critical actions §106 تُكتب فورًا، الباقي Buffered كل 2 ثانية/200 عنصر عبر Channel)، IAuditQueryService (فلترة+Pagination). ربطنا Login/Logout الفعليين في AuthenticationService بالـAudit (خارج الـUnitOfWork لأن audit.db وarchive.db قاعدتين منفصلتين). search/sort/filter/add/move/delete لسه مش مربوطين لأن المزايا نفسها (Search/Documents/Folders) لسه مبنيتش — هيتربطوا مع كل Phase. 5 اختبار جديد، 97/97 على مستوى الحل. **CHECKPOINT بطلب Ahmed — الشغل ده لسه مش متعمّله commit/push وقت كتابة السطر ده.**
 2026-09-12 — Ahmed طلب checkpoint (اتعمل، commit `5b04a37`) + قاعدة اقتصاد Context لـMulti-Agent Orchestration (§0.1.1، commit `f606970`) بعد ملاحظة استهلاك توكينز عالي (رد Codex كان فيه سطر ~125K توكِن من tool logs داخلية). Phase 5 (Document Core) بعدها: راجعناها مع Codex (Level 2) قبل التنفيذ — قرار: نقل الملف الفعلي قبل commit الـDB (orphan file أهون من DB record بيشاور على ملف مش موجود)، ورفضنا اقتراحه ببناء Import Operation Journal كامل (over-engineering لتطبيق مستخدم واحد). بنينا: Darhous.Archive.Modules.Documents (IFileStorageService/FileStorageService/DocumentService)، Migrations جديدة (file_path_normalized، number_sequences، recycle_bin_entries)، ArabicNormalization اتنقلت من Phase 8 المخطَّط لأنها لازمة من دلوقتي (title_normalized NOT NULL). ربطنا كل أفعال المستندات بالـAudit (حل دين Phase 4). 16 اختبار جديد، 113/113 على مستوى الحل. جاري commit+push، بعدها Phase 6.
 2026-09-12 — Phase 6 (Folder System) مكتملة: مشروع جديد Darhous.Archive.Modules.Folders (IFolderService/FolderService)، Migration operation_snapshots (DB Spec §142)، IBulkOperationService/BulkOperationService (في Modules.Documents — Bulk Move + Undo خلال 30 ثانية). منع دورات (Cycle) عند نقل فولدر داخل أحد فولدراته الفرعية، منع تكرار الاسم بين الإخوة. اكتشفنا وأصلحنا Bug أداء ذاتيًا (مش من مراجعة خارجية): أول تنفيذ لحذف فولدر مع نقل محتواه استخدم ListAsync() (سحب الجدول كله!) بدل استعلام مفلتر — أضفنا IDocumentRepository.ListByFolderAsync يستخدم الفهرس الموجود. 18 اختبار جديد، 131/131 على مستوى الحل. جاري commit+push، بعدها Phase 7.
+2026-09-12 — Phase 7 (Archive Explorer UI) مكتملة: أول شاشة رئيسية كاملة بعد تسجيل الدخول — ExplorerWindow/ExplorerViewModel حلّت محل WelcomePlaceholderWindow (اتحذفت بالكامل). Sidebar (TreeView متداخل من IFolderService)، Document list (ListView+GridView مع Virtualization كامل)، Search strip (Live filter client-side substring + ArabicNormalization من Phase 5 — الـFTS الحقيقي لسه Phase 8)، Breadcrumb، Bulk actions (نقل/حذف جماعي مربوطين بـIBulkOperationService/IDocumentService الموجودين من Phase 5-6)، Density modes (Compact/Standard/Comfortable)، Theme (نفس ThemeManager من Phase 3). حل دين Phase 6 القديم: created_by/updated_by بقت بتاخد principal.UserId الحقيقي بدل NULL. اكتشفنا Bug في الـTest fakes بس (مش الكود الحقيقي): Dictionary<Guid?,T> بترمي ArgumentNullException وقت التشغيل رغم إنها بس تحذير CS8714 وقت الترجمة — الإصلاح كان في FakeFolderService فقط (Guid.Empty كـsentinel)، الكود الحقيقي (FolderRepository/SQL) مش متأثر. مشروع اختبار جديد Darhous.Archive.Desktop.Tests (12 اختبار)، من ضمنهم Gate الأداء الإلزامي (§41): تحميل + فلترة 100,000 مستند وهمي في أقل من 2000ms — ناجح (نصف الـData layer فقط مؤتمت؛ نصف الـRendering البصري يحتاج تأكيد Ahmed يدويًا، زي Login UI في Phase 3). 143/143 اختبار على مستوى الحل، Release build نظيف (0 warnings/errors). جاري commit+push، بعدها Phase 8 (Search Foundation — أول Milestone استخدام يومي فعلي عند اكتماله).
 ```

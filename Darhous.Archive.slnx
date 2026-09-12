@@ -18,6 +18,7 @@
     <Project Path="tests/Darhous.Archive.Audit.Tests/Darhous.Archive.Audit.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Configuration.Tests/Darhous.Archive.Configuration.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Core.Tests/Darhous.Archive.Core.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Desktop.Tests/Darhous.Archive.Desktop.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.Documents.Tests/Darhous.Archive.Modules.Documents.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.Folders.Tests/Darhous.Archive.Modules.Folders.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Persistence.Tests/Darhous.Archive.Persistence.Tests.csproj" />

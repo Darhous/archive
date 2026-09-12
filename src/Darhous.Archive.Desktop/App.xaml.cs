@@ -12,6 +12,7 @@ using Darhous.Archive.Modules.Folders;
 using Darhous.Archive.Desktop.Hosting;
 using Darhous.Archive.Desktop.Themes;
 using Darhous.Archive.Desktop.ViewModels;
+using Darhous.Archive.Desktop.ViewModels.Explorer;
 using Darhous.Archive.Desktop.Views;
 using Darhous.Archive.Persistence;
 using Darhous.Archive.Persistence.Configuration;
@@ -74,19 +75,26 @@ public partial class App : System.Windows.Application
 
         viewModel.LoginSucceeded += (_, args) =>
         {
-            var welcome = new WelcomePlaceholderWindow(
-                args.Principal, args.SessionToken,
+            var explorerViewModel = new ExplorerViewModel(
+                _host.Services.GetRequiredService<Modules.Folders.IFolderService>(),
+                _host.Services.GetRequiredService<IDocumentRepository>(),
+                _host.Services.GetRequiredService<Modules.Documents.Services.IDocumentService>(),
+                _host.Services.GetRequiredService<Modules.Documents.BulkOperations.IBulkOperationService>(),
+                args.Principal);
+
+            var explorer = new ExplorerWindow(
+                explorerViewModel, args.Principal, args.SessionToken,
                 _host.Services.GetRequiredService<IAuthenticationService>(),
                 onLogout: ShowLoginWindow);
 
-            welcome.Show();
+            explorer.Show();
             loginWindow.Close();
         };
 
         loginWindow.Closed += (_, _) =>
         {
             // Closed without logging in (e.g. the user clicked the window's X button) — only
-            // shut down if no other top-level window (the welcome placeholder) is taking over.
+            // shut down if no other top-level window (the Explorer) is taking over.
             if (Windows.Count == 0)
             {
                 Shutdown();
