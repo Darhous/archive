@@ -14,6 +14,9 @@ using Darhous.Archive.Modules.Documents;
 using Darhous.Archive.Modules.Folders;
 using Darhous.Archive.Modules.Importers;
 using Darhous.Archive.Modules.Plugins;
+using Darhous.Archive.Modules.Reports;
+using Darhous.Archive.Modules.Reports.Printing;
+using Darhous.Archive.Modules.Reports.SavedViews;
 using Darhous.Archive.Core.Audit;
 using Darhous.Archive.Core.Events;
 using Darhous.Archive.Core.Time;
@@ -52,6 +55,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSearchPlugin();
         builder.Services.AddDiscoveryModule();
         builder.Services.AddImportersModule();
+        builder.Services.AddReportsModule();
         builder.Services.AddJobRunner();
         builder.Services.AddPluginsModule(
             typeof(App).Assembly.GetName().Version ?? new Version(1, 0, 0),
@@ -127,6 +131,8 @@ public partial class App : System.Windows.Application
             var explorer = new ExplorerWindow(
                 explorerViewModel, args.Principal, args.SessionToken,
                 _host.Services.GetRequiredService<IAuthenticationService>(),
+                _host.Services.GetRequiredService<ISavedViewReportService>(),
+                _host.Services.GetRequiredService<IPdfPrintService>(),
                 onLogout: ShowLoginWindow);
 
             explorer.Show();

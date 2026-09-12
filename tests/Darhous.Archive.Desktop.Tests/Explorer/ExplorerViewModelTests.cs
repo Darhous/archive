@@ -111,6 +111,23 @@ public class ExplorerViewModelTests
     }
 
     [Fact]
+    public async Task CreateCurrentViewReport_CapturesOnlyFilteredRowsAndViewContext()
+    {
+        var (vm, _, documents, _, _) = Build();
+        documents.AllDocuments.Add(MakeDocument("خطاب الحماية المدنية"));
+        documents.AllDocuments.Add(MakeDocument("مذكرة مرور قنا"));
+        await vm.InitializeAsync();
+        vm.SearchText = "مرور";
+
+        var report = vm.CreateCurrentViewReport();
+
+        Assert.Equal("كل الأرشيف", report.Name);
+        Assert.Equal("مرور", report.Filter);
+        var document = Assert.Single(report.Documents);
+        Assert.Equal("مذكرة مرور قنا", document.Title);
+    }
+
+    [Fact]
     public async Task DeleteSelectedAsync_TrashesOnlySelectedDocuments()
     {
         var (vm, _, documents, docService, _) = Build();

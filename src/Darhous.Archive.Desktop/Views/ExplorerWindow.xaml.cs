@@ -1,8 +1,13 @@
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Win32;
 using Darhous.Archive.Desktop.ViewModels.Explorer;
 using Darhous.Archive.Desktop.ViewModels.Explorer.Preview;
+using Darhous.Archive.Modules.Reports;
+using Darhous.Archive.Modules.Reports.Printing;
+using Darhous.Archive.Modules.Reports.SavedViews;
 using Darhous.Archive.Security.Authentication;
 using Darhous.Archive.Security.Sessions;
 
@@ -13,17 +18,24 @@ public partial class ExplorerWindow : Window
     private readonly ExplorerViewModel _viewModel;
     private readonly string? _sessionToken;
     private readonly IAuthenticationService _authenticationService;
+    private readonly ISavedViewReportService _savedViewReportService;
+    private readonly IPdfPrintService _pdfPrintService;
     private readonly Action _onLogout;
 
     public ExplorerWindow(
         ExplorerViewModel viewModel, ArchivePrincipal principal, string? sessionToken,
-        IAuthenticationService authenticationService, Action onLogout)
+        IAuthenticationService authenticationService,
+        ISavedViewReportService savedViewReportService,
+        IPdfPrintService pdfPrintService,
+        Action onLogout)
     {
         InitializeComponent();
 
         _viewModel = viewModel;
         _sessionToken = sessionToken;
         _authenticationService = authenticationService;
+        _savedViewReportService = savedViewReportService;
+        _pdfPrintService = pdfPrintService;
         _onLogout = onLogout;
 
         DataContext = viewModel;
@@ -106,5 +118,69 @@ public partial class ExplorerWindow : Window
 
         _onLogout();
         Close();
+    }
+
+    private async void ExportReport_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: string formatName } ||
+            !Enum.TryParse<ReportFormat>(formatName, ignoreCase: true, out var format))
+        {
+            return;
+        }
+
+        var (extension, filter) = format switch
+        {
+            ReportFormat.Excel => (".xlsx", "Excel workbook (*.xlsx)|*.xlsx"),
+            ReportFormat.Csv => (".csv", "CSV file (*.csv)|*.csv"),
+            ReportFormat.Pdf => (".pdf", "PDF document (*.pdf)|*.pdf"),
+            _ => throw new ArgumentOutOfRangeException(nameof(format)),
+        };
+        var dialog = new SaveFileDialog
+        {
+            AddExtension = true,
+            DefaultExt = extension,
+            Filter = filter,
+            FileName = $"archive-view-{DateTime.Now:yyyyMMdd-HHmm}",
+        };
+
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await _savedViewReportService.ExportAsync(
+                _viewModel.CreateCurrentViewReport(),
+                format,
+                dialog.FileName,
+                CancellationToken.None);
+            Title = $"Darhous Smart Archive — تم تصدير التقرير إلى {dialog.FileName}";
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(this, exception.Message, "فشل تصدير التقرير", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void PrintReport_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var printDirectory = Path.Combine(Path.GetTempPath(), "Darhous.Archive", "PrintJobs");
+            Directory.CreateDirectory(printDirectory);
+            var pdfPath = Path.Combine(printDirectory, $"archive-view-{Guid.CreateVersion7():N}.pdf");
+            await _savedViewReportService.ExportAsync(
+                _viewModel.CreateCurrentViewReport(),
+                ReportFormat.Pdf,
+                pdfPath,
+                CancellationToken.None);
+            await _pdfPrintService.PrintAsync(pdfPath, CancellationToken.None);
+            Title = "Darhous Smart Archive — تم إرسال التقرير إلى معالج الطباعة الافتراضي.";
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(this, exception.Message, "فشل طباعة التقرير", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }

@@ -6,6 +6,7 @@ using Darhous.Archive.Core.Text;
 using Darhous.Archive.Modules.Documents.BulkOperations;
 using Darhous.Archive.Modules.Documents.Services;
 using Darhous.Archive.Modules.Folders;
+using Darhous.Archive.Modules.Reports.SavedViews;
 using Darhous.Archive.Desktop.ViewModels.Explorer.Preview;
 using Darhous.Archive.Security.Sessions;
 
@@ -154,6 +155,16 @@ public sealed partial class ExplorerViewModel : ObservableObject
     }
 
     public void UpdateSelectionCount() => SelectedDocumentCount = Documents.Count(d => d.IsSelected);
+
+    public SavedViewReport CreateCurrentViewReport() =>
+        new(
+            Breadcrumb,
+            SearchText,
+            Documents.Select(document => new SavedViewDocument(
+                document.ArchiveNumber,
+                document.Title,
+                document.Status,
+                document.ArchiveDate)).ToArray());
 
     private async Task RebuildFolderTreeAsync()
     {

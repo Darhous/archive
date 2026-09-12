@@ -22,6 +22,7 @@
     <Project Path="src/Modules/Darhous.Archive.Modules.Plugins/Darhous.Archive.Modules.Plugins.csproj" />
     <Project Path="src/Darhous.Archive.Modules.Scanner/Darhous.Archive.Modules.Scanner.csproj" />
     <Project Path="src/Modules/Darhous.Archive.Modules.Ocr/Darhous.Archive.Modules.Ocr.csproj" />
+    <Project Path="src/Modules/Darhous.Archive.Modules.Reports/Darhous.Archive.Modules.Reports.csproj" />
   </Folder>
   <Folder Name="/src/OfficialPlugins/">
     <Project Path="src/OfficialPlugins/Darhous.Search.SqliteFts/Darhous.Search.SqliteFts.csproj" />
@@ -46,6 +47,7 @@
     <Project Path="tests/Darhous.Search.SqliteFts.Tests/Darhous.Search.SqliteFts.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Ocr.Worker.Tests/Darhous.Archive.Ocr.Worker.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.Ocr.Tests/Darhous.Archive.Modules.Ocr.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Modules.Reports.Tests/Darhous.Archive.Modules.Reports.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Fixtures/">
     <Project Path="tests/Fixtures/Darhous.TestPlugin/Darhous.TestPlugin.csproj" />

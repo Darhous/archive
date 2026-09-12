@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="PDFsharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Darhous.Archive.Core\Darhous.Archive.Core.csproj" />
+    <ProjectReference Include="..\..\Darhous.Archive.Contracts\Darhous.Archive.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
