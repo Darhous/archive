@@ -63,7 +63,11 @@ public class ScannerPluginTests
     [Fact]
     public async Task FullPluginLifecycle_Tests()
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "tests", "Fixtures", "Darhous.TestScannerWorker", "bin", "Debug", "net10.0-windows", "Darhous.TestScannerWorker.exe");
+        // Match whatever configuration (Debug/Release) this very test assembly was built
+        // with, rather than hardcoding "Debug" — CI builds/tests in Release and a hardcoded
+        // Debug path leaves the fixture unbuildable there (worker fails to start silently).
+        var configuration = Path.GetFileName(Path.GetDirectoryName(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar)))!;
+        var fixturePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "tests", "Fixtures", "Darhous.TestScannerWorker", "bin", configuration, "net10.0-windows", "Darhous.TestScannerWorker.exe");
         
         var options = new ScannerSupervisionOptions
         {

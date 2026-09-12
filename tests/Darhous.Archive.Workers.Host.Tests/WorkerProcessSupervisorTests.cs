@@ -61,9 +61,13 @@ public class WorkerProcessSupervisorTests : IAsyncLifetime, IDisposable
     {
         var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
         var ext = isWindows ? ".exe" : "";
+        // Match whatever configuration (Debug/Release) this very test assembly was built
+        // with, rather than hardcoding "Debug" — CI builds/tests in Release and a hardcoded
+        // Debug path leaves the fixture unbuildable there (FileNotFoundException).
+        var configuration = Path.GetFileName(Path.GetDirectoryName(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar)))!;
         _testWorkerPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
-            "..", "..", "..", "..", "Fixtures", "Darhous.TestWorkerProcess", "bin", "Debug", "net10.0", $"Darhous.TestWorkerProcess{ext}"));
+            "..", "..", "..", "..", "Fixtures", "Darhous.TestWorkerProcess", "bin", configuration, "net10.0", $"Darhous.TestWorkerProcess{ext}"));
             
         _clock = new FakeClock();
         _delayProvider = new FakeDelayProvider();
