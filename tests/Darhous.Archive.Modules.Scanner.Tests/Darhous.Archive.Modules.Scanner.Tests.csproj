@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Darhous.Archive.Modules.Scanner\Darhous.Archive.Modules.Scanner.csproj" />
+    <ProjectReference Include="..\..\src\Darhous.Archive.Workers.Host\Darhous.Archive.Workers.Host.csproj" />
+    <ProjectReference Include="..\..\src\Darhous.Archive.PluginSdk\Darhous.Archive.PluginSdk.csproj" />
+    <ProjectReference Include="..\..\src\Darhous.Archive.Core\Darhous.Archive.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -11,6 +11,7 @@
     <Project Path="src/Darhous.Archive.Security/Darhous.Archive.Security.csproj" />
     <Project Path="src/Darhous.Archive.Workers/Darhous.Archive.Workers.csproj" />
     <Project Path="src/Darhous.Archive.Workers.Host/Darhous.Archive.Workers.Host.csproj" />
+    <Project Path="src/Darhous.Archive.Scanner.Worker/Darhous.Archive.Scanner.Worker.csproj" />
   </Folder>
   <Folder Name="/src/Modules/">
     <Project Path="src/Modules/Darhous.Archive.Modules.Discovery/Darhous.Archive.Modules.Discovery.csproj" />
@@ -18,6 +19,7 @@
     <Project Path="src/Modules/Darhous.Archive.Modules.Folders/Darhous.Archive.Modules.Folders.csproj" />
     <Project Path="src/Modules/Darhous.Archive.Modules.Importers/Darhous.Archive.Modules.Importers.csproj" />
     <Project Path="src/Modules/Darhous.Archive.Modules.Plugins/Darhous.Archive.Modules.Plugins.csproj" />
+    <Project Path="src/Darhous.Archive.Modules.Scanner/Darhous.Archive.Modules.Scanner.csproj" />
   </Folder>
   <Folder Name="/src/OfficialPlugins/">
     <Project Path="src/OfficialPlugins/Darhous.Search.SqliteFts/Darhous.Search.SqliteFts.csproj" />
@@ -37,10 +39,13 @@
     <Project Path="tests/Darhous.Archive.Security.Tests/Darhous.Archive.Security.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Workers.Tests/Darhous.Archive.Workers.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Workers.Host.Tests/Darhous.Archive.Workers.Host.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Scanner.Worker.Tests/Darhous.Archive.Scanner.Worker.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Modules.Scanner.Tests/Darhous.Archive.Modules.Scanner.Tests.csproj" />
     <Project Path="tests/Darhous.Search.SqliteFts.Tests/Darhous.Search.SqliteFts.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Fixtures/">
     <Project Path="tests/Fixtures/Darhous.TestPlugin/Darhous.TestPlugin.csproj" />
     <Project Path="tests/Fixtures/Darhous.TestWorkerProcess/Darhous.TestWorkerProcess.csproj" />
+    <Project Path="tests/Fixtures/Darhous.TestScannerWorker/Darhous.TestScannerWorker.csproj" />
   </Folder>
 </Solution>

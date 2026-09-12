@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Darhous.Archive.PluginSdk\Darhous.Archive.PluginSdk.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Workers\Darhous.Archive.Workers.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Workers.Host\Darhous.Archive.Workers.Host.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Persistence\Darhous.Archive.Persistence.csproj" />
+  </ItemGroup>
+</Project>

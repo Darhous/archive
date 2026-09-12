@@ -49,11 +49,11 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية:** Phase 13 (Worker Infrastructure) مكتملة محليًا — نُفّذت لأول مرة عبر تقسيم عمل بين Codex وGemini/AntiGravity على Worktrees منفصلة (راجع [[feedback_orchestration_worktrees]])، ثم مراجعة وتحقق مستقل ودمج يدوي مني في `main`. جاري تجهيز Debug build/test نهائي على مستوى الحل ثم Commit+Tag+Push، ثم Phase 14 (Scanner).
-- **Repository:** https://github.com/Darhous/archive — Phase 0-10 مدفوعة على `main`، CI شغّال. Phase 11-13 لسه محليًا وقت كتابة السطر ده.
+- **المرحلة الحالية:** Phase 14 (Scanner) مكتملة محليًا — أول مرة يتنفذ فيها Worker+Plugin حقيقيين فوق بنية Phase 13 مباشرة، عبر نفس أسلوب تقسيم العمل بين Codex وGemini/AntiGravity على Worktrees منفصلة (راجع [[feedback_orchestration_worktrees]])، مع اكتشاف وحل تعارض عقد اتصال حقيقي أثناء المراجعة (تفاصيل في قسم Phase 14 تحت). جاري تجهيز Debug build/test نهائي على مستوى الحل ثم Commit+Tag+Push، ثم Phase 15 (OCR — كودكس شغّال عليها بالفعل بالتوازي في Worktree منفصل).
+- **Repository:** https://github.com/Darhous/archive — Phase 0-10 مدفوعة على `main`، CI شغّال. Phase 11-14 لسه محليًا وقت كتابة السطر ده.
 - **آخر مرحلة مكتملة (مدفوعة):** Phase 10 — Importers.
-- **آخر مرحلة مكتملة (محليًا):** Phase 13 — Worker Infrastructure (تفاصيل كاملة في قسم Phase 13 تحت). Named Pipes IPC حقيقي بـHandshake/Session token/ACL كاملين، Restart policy + Crash-loop quarantine على مستوى Process حقيقي، كتالوج رسائل IPC موثَّق لأول مرة.
-- **العمل القادم:** Commit + Tag (`phase-13`) + Push، ثم Phase 14 — Scanner (§65-67 من الوثيقة الأم): Official Plugin `Darhous.Scanner.Naps2` + Worker `Darhous.Archive.Scanner.Worker` — أول استخدام حقيقي للـWorker Infrastructure اللي بُنيت في Phase 13.
+- **آخر مرحلة مكتملة (محليًا):** Phase 14 — Scanner (تفاصيل كاملة في قسم Phase 14 تحت). Worker حقيقي بـNAPS2 SDK، Plugin عبر Plugin Platform (Phase 12) بيشغّله عبر Worker Infrastructure (Phase 13)، عقد الاتصال بين الطرفين اتصلح بعد مطابقة يدوية وقت المراجعة.
+- **العمل القادم:** Commit + Tag (`phase-14`) + Push، ثم مراجعة Phase 15 (OCR) بمجرد ما كودكس يخلصها — بتقفل فجوة قديمة موثّقة من Phase 8/10 (ربط النص المُستخرَج بفهرس البحث الفعلي).
 - **عوائق مفتوحة:** لا يوجد. **ديون تقنية متبقية** (§142): `outbox_events.user_id` و`audit_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود لكل واحد) — هيتحلوا لما نبني lookup فعلي بين Guid uid والـinternal id، مش عاجل. **ملاحظة قديمة:** حساب Admin افتراضي اتنشأ على %ProgramData% الجهاز الحقيقي وقت اختبار Phase 3 — كلمة المرور اتعرضت مرة واحدة واتقفلت قبل الالتقاط؛ امسح `%ProgramData%\DarhousSmartArchive` لو عايز تبدأ من الصفر.
 - **اختبارات Flaky بيئيًا مقبولة (مش Regression، اتأكدت بإعادة تشغيل منفصل):**
   1. `Darhous.Archive.Desktop.Tests.Explorer.ExplorerViewModelTests.LiveFilter_With100000Documents_CompletesQuickly` — Gate أداء 100k صف، حساس لحمل الجهاز وقت التشغيل المتوازي (موثّق من Phase 7).
@@ -357,12 +357,23 @@ Performance → Installer
 - **25 اختبار جديد** (21 لـ`Darhous.Archive.Workers.Tests` + 4 لـ`Darhous.Archive.Workers.Host.Tests`) — راجعتهم بنفسي (مش بس التقارير) وشغّلتهم مستقل قبل الدمج، الاتنين نجحوا 100% فعليًا.
 - Fixture حقيقي منفصل `Darhous.TestWorkerProcess` (Console app بسيط بيقرأ `TESTWORKER_CRASH` من الـEnvironment، مش IPC-aware — تعمّد يكون بسيط عشان يثبت منطق الإشراف بمعزل عن البروتوكول).
 
-### Phase 14 — Scanner `[ ]`
-*مرجع: §65-67*
-- [ ] Official Plugin: `Darhous.Scanner.Naps2`
-- [ ] Worker: `Darhous.Archive.Scanner.Worker`
-- [ ] Capabilities: ADF/Flatbed/Single/Duplex/300 DPI/Color/Grayscale/B&W/page separation
-- [ ] Seed profiles: A4 Single 300 DPI OCR Arabic, A4 Every Page, A4 Every 2 Pages, Duplex, Flatbed
+### Phase 14 — Scanner `[x]`
+*مرجع: §38-39، §65-67*
+- [x] Official Plugin: `Darhous.Archive.Modules.Scanner` (`ScannerPlugin` عبر `IArchivePlugin`، Plugin SDK من Phase 12)
+- [x] Worker: `Darhous.Archive.Scanner.Worker` (Out-of-Process حقيقي، عبر Worker Infrastructure من Phase 13)
+- [x] Capabilities: ADF/Flatbed/Single/Duplex/300 DPI/Color/Grayscale/B&W/page separation (كلها موجودة في `ScanProfile`/`ScannerContracts.cs`)
+- [x] Seed profiles: A4 Single 300 DPI OCR Arabic, A4 Every Page, A4 Every 2 Pages, Duplex, Flatbed (Migration `M202609120004_ScannerProfiles`، Seeding Idempotent، مُختبَر)
+- **DoD (§135 نمط):** جاهز — Worker حقيقي بيستخدم NAPS2 SDK فعليًا (مش Stub)، Plugin بيشغّله عبر `WorkerProcessSupervisor`+`WorkerHandshakeHost` من Phase 13 بالظبط، عقد الاتصال (`scan.request`/`scan.result`) متوافق فعليًا بين الطرفين بعد جولة مطابقة يدوية. **لسه مش موصول بأي UI** (زرار "مسح" في Explorer، صفحة Devices) — نفس قرار النطاق المتكرر من Search (Phase 8)/Plugin Platform (Phase 12) — البنية التحتية جاهزة، الربط البصري مؤجل لمرحلة UI لاحقة.
+
+**قرارات معمارية وفجوات موثّقة (اتنفذت بالتوازي بين Codex وGemini/AntiGravity على Worktrees منفصلة، ثم مراجعة+مطابقة عقد يدوية مني، زي Phase 13 بالظبط — راجع [[feedback_orchestration_worktrees]]):**
+- **الجزء الأول (Worker، كودكس، `Darhous.Archive.Scanner.Worker`)**: `IScannerEngine` بتطبيق NAPS2 SDK حقيقي (حزمة `NAPS2.Sdk` أُضيفت للـCentral Package Management بإذن صريح لهذه المرحلة فقط)، مع Backend صور مخصص بسيط (`System.Drawing`/Windows Desktop) لأن NAPS2 محتاج حزمة Image-backend إضافية لم يُصرَّح بإضافتها — قرار موثّق صراحة كأكبر نقطة ضعف في تقريره الخاص. الـWorker بيرجّع نتيجة النجاح كـ`LargeDataReference` (من Phase 13 مباشرة) لملف PDF واحد أو ZIP مرتّب لعدة ملفات لو وضع الفصل بين الصفحات أنتج أكتر من ملف؛ الفشل بيرجع كـ`ScanFailure{Code,Message}` — تمييز بنيوي بدون حقل Discriminator صريح (فجوة بروتوكول عامة موروثة من Phase 13 نفسها، مش مشكلة جديدة). **29 اختبار**، تقرير `WORKER_REPORT.md` من أكثر التقارير تفصيلًا وصدقًا لحد الآن (بيوثّق كل قرار وكل افتراض برقم مرجع، ويرفض يدّعي Production-readiness: "4/10 Production-ready، 8/10 للسلوك المُختبَر بدون هاردوير حقيقي").
+- **الجزء الثاني (Plugin+Provider، Gemini، `Darhous.Archive.Modules.Scanner`)**: **مشكلة حقيقية اكتُشفت أثناء المراجعة (مش من التقرير)** — النسخة الأولى افترضت شكل Payload مختلف تمامًا عن اللي كودكس بناه فعليًا (`{FilePath,Success,ErrorMessage}` بدل `LargeDataReference`/`ScanFailure` الحقيقيين) — عقدين غير متوافقين كانا هيمنعوا أي تكامل فعلي. اتبعتلها جولة مطابقة عقد صريحة (`PHASE14_RECONCILE.md`) بالشكل الدقيق المُستخرَج من كود كودكس الفعلي، واتصلحت فعليًا بعد المراجعة. **دي أهم فايدة عملية للـMulti-Agent review اللي عملناها**: لو اتقبل التقرير الأول على العمى (زي ما التقرير الأول كان بيدّعي "8/10 Production Ready" بعد كده)، كان الـIntegration هيفشل بصمت لحد أول اختبار حقيقي.
+- **`OcrExtractionSweepService`-style pattern لسه مبنيش هنا** (ده Phase 15) — بس البنية اتصمّمت من الأول عشان تتكرر بسهولة.
+
+**دروس Multi-Agent موثّقة لأول مرة صراحة:**
+1. التقرير الذاتي ("قاسي جدًا" بطلب Ahmed) مفيد جدًا لاكتشاف الفجوات المعروفة (كودكس)، لكن **مش بديل عن المراجعة المستقلة الفعلية** — التقرير الأول لجيميني كان "8/10" واثق رغم عقد اتصال كسور بالكامل، لحد ما راجعت الكود الفعلي بنفسي.
+2. تقسيم العمل لنصفين بعقد وسيط صريح (زي Phase 13) ينجح لما العقد الوسيط يبقى مُعرَّف كتابيًا في البريف مسبقًا (زي `LargeDataReference`/`WorkerHandshake` من Phase 13 نفسها)؛ لما العقد الوسيط "يُختَرع" من الطرفين بشكل مستقل (زي `scan.request`/`scan.result` Payload shape هنا)، لازم جولة مطابقة يدوية بعد كده — قيد حقيقي، مش عيب في الأسلوب نفسه.
+3. **31 اختبار جديد** (29 لـ`Darhous.Archive.Scanner.Worker.Tests` + 2 لـ`Darhous.Archive.Modules.Scanner.Tests` بعد التقوية — كانوا 1 بس في المحاولة الأولى، ضعف واضح اتكتشف واتصلح في المراجعة).
 
 ### Phase 15 — OCR `[ ]`
 *مرجع: §68-70*

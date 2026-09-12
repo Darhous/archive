@@ -63,6 +63,11 @@
     <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4191.47" />
   </ItemGroup>
 
+  <!-- Phase 14 official scanner provider per master doc §38.1. -->
+  <ItemGroup>
+    <PackageVersion Include="NAPS2.Sdk" Version="1.3.0" />
+  </ItemGroup>
+
   <!-- Testing -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
