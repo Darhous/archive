@@ -116,6 +116,23 @@ public sealed class DocumentRepository : IDocumentRepository
         return readRows.Select(Map).ToList();
     }
 
+    public async Task<IReadOnlyList<Document>> ListUpdatedSinceAsync(DateTimeOffset since, CancellationToken cancellationToken)
+    {
+        var sql = $"{SelectColumns} WHERE d.updated_at > @Since ORDER BY d.updated_at;";
+        var parameters = new { Since = since.ToUnixTimeMilliseconds() };
+
+        if (_boundConnection is not null)
+        {
+            var rows = await _boundConnection.QueryAsync<DocumentRow>(
+                new CommandDefinition(sql, parameters, _boundTransaction, cancellationToken: cancellationToken));
+            return rows.Select(Map).ToList();
+        }
+
+        await using var connection = await _connectionFactory!.OpenAsync(DatabaseKind.Archive, cancellationToken);
+        var readRows = await connection.QueryAsync<DocumentRow>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        return readRows.Select(Map).ToList();
+    }
+
     public Task SetCurrentVersionAsync(Guid documentUid, Guid versionUid, CancellationToken cancellationToken)
     {
         RequireWriteMode(nameof(SetCurrentVersionAsync));

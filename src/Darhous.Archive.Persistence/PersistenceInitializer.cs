@@ -17,11 +17,10 @@ public static class PersistenceInitializer
     /// <summary>
     /// FluentMigrator throws <c>MissingMigrationsException</c> if a runner's tag filter
     /// matches zero migration classes — it treats "nothing to migrate" as an error, not a
-    /// no-op. archive.db (Phase 2) and audit.db (Phase 4) both have real migrations now;
-    /// search.db's schema doesn't exist until Phase 8, so calling the migrator for it today
-    /// would just throw. Extend this list when that phase adds its first tagged migration.
+    /// no-op. All three databases have real migrations as of Phase 8 (search.db's landed
+    /// with <c>M202609120001_InitialSearchSchema</c>).
     /// </summary>
-    private static readonly DatabaseKind[] DatabasesWithMigrations = [DatabaseKind.Archive, DatabaseKind.Audit];
+    private static readonly DatabaseKind[] DatabasesWithMigrations = [DatabaseKind.Archive, DatabaseKind.Audit, DatabaseKind.Search];
 
     public static async Task InitializeAsync(PersistenceOptions options, CancellationToken cancellationToken)
     {

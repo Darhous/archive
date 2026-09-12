@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OfficialPlugins\Darhous.Search.SqliteFts\Darhous.Search.SqliteFts.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Darhous.Archive.Modules.Documents\Darhous.Archive.Modules.Documents.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Darhous.Archive.Modules.Folders\Darhous.Archive.Modules.Folders.csproj" />
+    <ProjectReference Include="..\..\src\Darhous.Archive.Persistence\Darhous.Archive.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\Darhous.Archive.Audit\Darhous.Archive.Audit.csproj" />
+  </ItemGroup>
+
+</Project>

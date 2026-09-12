@@ -19,6 +19,7 @@ using Darhous.Archive.Persistence.Configuration;
 using Darhous.Archive.Security;
 using Darhous.Archive.Security.Authentication;
 using Darhous.Archive.Security.Sessions;
+using Darhous.Search.SqliteFts;
 
 namespace Darhous.Archive.Desktop;
 
@@ -38,6 +39,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSecurity();
         builder.Services.AddDocumentsModule();
         builder.Services.AddFoldersModule();
+        builder.Services.AddSearchPlugin();
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginWindow>();
 

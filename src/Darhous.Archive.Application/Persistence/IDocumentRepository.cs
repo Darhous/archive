@@ -20,6 +20,14 @@ public interface IDocumentRepository
     /// <summary>Non-deleted documents directly in this folder (or Unclassified, if null) — indexed lookup, not a table scan (DB Spec §99: ix_documents_folder_status).</summary>
     Task<IReadOnlyList<Document>> ListByFolderAsync(Guid? folderId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Documents (including soft-deleted ones — callers must check <see cref="Document.DeletedAt"/>)
+    /// whose <c>updated_at</c> is strictly greater than <paramref name="since"/>, oldest first. Drives
+    /// the Phase 8 search-index reconciliation sweep (<c>ix_documents_updated_at</c>, DB Spec §99);
+    /// never used for anything requiring a hard consistency guarantee.
+    /// </summary>
+    Task<IReadOnlyList<Document>> ListUpdatedSinceAsync(DateTimeOffset since, CancellationToken cancellationToken);
+
     Task SetCurrentVersionAsync(Guid documentUid, Guid versionUid, CancellationToken cancellationToken);
 
     Task MoveToFolderAsync(Guid documentUid, Guid? folderUid, CancellationToken cancellationToken);

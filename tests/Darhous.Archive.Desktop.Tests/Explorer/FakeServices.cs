@@ -51,6 +51,8 @@ internal sealed class FakeDocumentRepository : IDocumentRepository
 
     public Task<IReadOnlyList<Document>> ListByFolderAsync(Guid? folderId, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<Document>>(AllDocuments.Where(d => d.FolderId == folderId).ToList());
+
+    public Task<IReadOnlyList<Document>> ListUpdatedSinceAsync(DateTimeOffset since, CancellationToken cancellationToken) => throw new NotImplementedException();
 }
 
 internal sealed class FakeDocumentService : IDocumentService

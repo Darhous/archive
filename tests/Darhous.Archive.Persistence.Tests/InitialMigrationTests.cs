@@ -37,13 +37,20 @@ public class InitialMigrationTests : PersistenceTestBase
     }
 
     [Fact]
-    public async Task SearchDb_HasNoTablesYet()
+    public async Task SearchDb_HasFts5AndShadowTables()
     {
-        // search.db's real schema arrives in Phase 8 — until then it should have nothing
-        // beyond what WAL init touches (no tables at all).
+        // Phase 8 (DB Spec §86-89). FTS5 virtual tables register several implicit shadow
+        // tables (documents_fts_data/_idx/_content/_docsize/_config) alongside the one we
+        // declared — asserting Contains rather than an exact set avoids pinning to FTS5's
+        // internal naming, which is an implementation detail, not part of our schema.
         var searchTables = await GetTableNamesAsync(DatabaseKind.Search);
 
-        Assert.Empty(searchTables);
+        Assert.Contains("documents_fts", searchTables);
+        Assert.Contains("search_documents", searchTables);
+        Assert.Contains("search_document_tags", searchTables);
+        Assert.Contains("search_state", searchTables);
+        Assert.DoesNotContain("documents", searchTables);
+        Assert.DoesNotContain("roles", searchTables);
     }
 
     [Fact]

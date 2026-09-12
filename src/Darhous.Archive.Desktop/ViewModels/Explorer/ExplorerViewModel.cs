@@ -12,9 +12,12 @@ namespace Darhous.Archive.Desktop.ViewModels.Explorer;
 
 /// <summary>
 /// SAD §37 (Archive Explorer). Live filtering is a client-side substring match on the
-/// currently-loaded scope for now — real full-text search/ranking/pagination against
-/// search.db is Phase 8; this proves the UI shell (tree, list, breadcrumb, bulk actions,
-/// virtualization) works before Search exists to plug into it.
+/// currently-loaded scope — real full-text search/ranking/snippets/pagination against
+/// search.db was built in Phase 8 (<c>Darhous.Search.SqliteFts</c>, registered and running
+/// in the host) but deliberately not wired into this quick-filter box yet: a real 250ms
+/// debounced FTS call and this box's synchronous instant-filter behavior don't mix without
+/// a dedicated results UI (snippets, "N نتيجة" count, an unavailable/rebuilding state) — that
+/// belongs in a proper Search UI phase, not retrofitted onto Explorer's existing filter.
 /// </summary>
 public sealed partial class ExplorerViewModel : ObservableObject
 {
