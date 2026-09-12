@@ -93,6 +93,9 @@ public sealed class DocumentVersionRepository : IDocumentVersionRepository
     public Task<DocumentVersion?> FindBySha256Async(string sha256, CancellationToken cancellationToken) =>
         QuerySingleAsync($"{SelectColumns} WHERE v.sha256 = @Sha256 LIMIT 1;", new { Sha256 = sha256 }, cancellationToken);
 
+    public Task<DocumentVersion?> FindByFilePathAsync(string filePath, CancellationToken cancellationToken) =>
+        QuerySingleAsync($"{SelectColumns} WHERE v.file_path_normalized = @Normalized LIMIT 1;", new { Normalized = NormalizePath(filePath) }, cancellationToken);
+
     public async Task<IReadOnlyList<DocumentVersion>> ListForDocumentAsync(Guid documentUid, CancellationToken cancellationToken)
     {
         var sql = $"{SelectColumns} WHERE d.uid = @DocumentUid ORDER BY v.version_no;";

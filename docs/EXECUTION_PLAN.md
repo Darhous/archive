@@ -49,11 +49,11 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية:** Phase 8 (Search Foundation) مكتملة محليًا، 160/160 اختبار ناجح، Release build نظيف (0 warnings/errors). جاري تجهيز Commit+Push، ثم Phase 9 (Automatic Computer Discovery).
-- **Repository:** https://github.com/Darhous/archive — Phase 0-7 مدفوعة على `main`، CI شغّال. Phase 8 لسه محليًا وقت كتابة السطر ده.
-- **آخر مرحلة مكتملة (مدفوعة):** Phase 7 — Archive Explorer UI.
-- **آخر مرحلة مكتملة (محليًا):** Phase 8 — Search Foundation (160/160 اختبار، تفاصيل كاملة في قسم Phase 8 تحت). **أول نسخة داخلية قابلة للاستخدام اليومي فعليًا (§141.1) — محرك بحث حقيقي جاهز**، وإن كان ربطه بواجهة بحث مخصصة مؤجل (راجع ملاحظة "قرار Scope عن UI" تحت).
-- **العمل القادم:** Commit + Push لـPhase 8، ثم Phase 9 — Automatic Computer Discovery (§45-53): `Darhous.Archive.Modules.Discovery`, Onboarding (اختيار مجلدات البداية قبل أي فحص كامل — SAD §46.9)، Discovery scope (Local fixed drives + Removable المختارة + Watch folders)، Supported extensions.
+- **المرحلة الحالية:** Phase 9 (Automatic Computer Discovery) مكتملة محليًا، 189/189 اختبار ناجح، Release build نظيف (0 warnings/errors). جاري تجهيز Commit+Push، ثم Phase 10 (Importers).
+- **Repository:** https://github.com/Darhous/archive — Phase 0-8 مدفوعة على `main`، CI شغّال. Phase 9 لسه محليًا وقت كتابة السطر ده.
+- **آخر مرحلة مكتملة (مدفوعة):** Phase 8 — Search Foundation.
+- **آخر مرحلة مكتملة (محليًا):** Phase 9 — Automatic Computer Discovery (189/189 اختبار، تفاصيل كاملة في قسم Phase 9 تحت). **Job System الحقيقي بُني لأول مرة** (Scheduler/Repository/Crash Recovery) بعد ما كان مجرد Interfaces من Phase 1.
+- **العمل القادم:** Commit + Push لـPhase 9، ثم Phase 10 — Importers (§54-58): PDF Importer (كشف طبقة النص/استخراج/عدد الصفحات/Metadata)، DOCX/XLSX/PPTX عبر Open XML SDK، Legacy DOC/XLS/PPT عبر Worker/Interop (خارج UI process)، MSG/EML Importer.
 - **عوائق مفتوحة:** لا يوجد. **ديون تقنية متبقية** (§142): `outbox_events.user_id` و`audit_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود لكل واحد) — هيتحلوا لما نبني lookup فعلي بين Guid uid والـinternal id، مش عاجل. **ملاحظة قديمة:** حساب Admin افتراضي اتنشأ على %ProgramData% الجهاز الحقيقي وقت اختبار Phase 3 — كلمة المرور اتعرضت مرة واحدة واتقفلت قبل الالتقاط؛ امسح `%ProgramData%\DarhousSmartArchive` لو عايز تبدأ من الصفر.
 
 ---
@@ -251,18 +251,24 @@ Performance → Installer
 
 ### Phase 9 — Automatic Computer Discovery `[ ]`
 *مرجع: §45-53*
-- [ ] Module: `Darhous.Archive.Modules.Discovery`
-- [ ] **تنفيذ Onboarding أولًا (SAD §46.9): اختيار مجلدات البداية قبل أي فحص كامل**
-- [ ] Discovery scope: Local fixed drives + User-selected removable + watch folders
-- [ ] Supported extensions: .pdf .doc .docx .xls .xlsx .ppt .pptx .msg .eml
-- [ ] Technical exclusions (Windows, Program Files, System Volume Information, $Recycle.Bin, Temp, Darhous internal)
-- [ ] User exclusions (Drive/Folder/Subfolder)
-- [ ] Initial Discovery Flow: enumerate → exclusions → count → summary → user starts
-- [ ] Continuous Indexing: FileSystemWatcher + Hourly + Daily reconciliation
-- [ ] Discovery Safety: لا فتح كامل للملف أثناء enumeration (path+extension+size+timestamps فقط)
-- [ ] Job model: `DiscoveryScanJob`, `FileIndexJob`, `MissingFileReconcileJob`
-- [ ] "فحص الكمبيوتر بالكامل" كخيار إضافي صريح بعد Onboarding
-- **DoD (§133):** drives, exclusions, count, summary, indexing start, file watcher, hourly/daily reconciliation, missing file state, no recursion loops, UI responsive.
+- [x] Module: `Darhous.Archive.Modules.Discovery`
+- [x] **Onboarding أولًا (SAD §46.9)**: `OnboardingWindow`/`OnboardingViewModel` — تُعرض مرة واحدة بعد أول Login ناجح (تتبع عبر `IAppSettingsStore["onboarding_completed"]`، مش عبر فحص watch_folders فاضية كل مرة، عشان "تخطي" ما يرجعش يفتحها تاني). المستخدم يختار مجلد أو أكثر (`OpenFolderDialog` من WPF .NET 8+) أو يضغط "فحص الكمبيوتر بالكامل (اختياري)" (تأكيد صريح بـMessageBox قبل التنفيذ) أو "تخطي الآن"
+- [x] Discovery scope: **Job System الحقيقي بُني الآن لأول مرة** — الـinterfaces (`IBackgroundJob`/`IJobContext`) كانت موجودة من Phase 1 وجدول `jobs` من Phase 2، لكن مفيش Scheduler/Repository شغّال فعليًا كان موجود قبل كده. بنينا: `JobRepository` (dual-mode)، `JobRunner` (BackgroundService — Job واحد في المرة الواحدة عمدًا، V1 simplification)، Retry بـExponential backoff، **Crash Recovery** (SAD §53: أي Job فضل `running` وقت انطفاء التطبيق يتفحص عبر `IBackgroundJob.IsSafeToResumeAfterCrash` — لو Safe يرجع `pending`، لو لأ يبقى `needs_review`)
+- [x] Local fixed drives (`auto_discover=true` افتراضيًا) + Removable/Network drives (تُسجَّل في `source_drives` بس `auto_discover=false` لحد ما المستخدم يوافق صراحة — **الموافقة الفعلية عبر UI لسه مش مبنية، فجوة موثّقة تحت**) + watch_folders (من Onboarding)
+- [x] Supported extensions: .pdf .doc .docx .xls .xlsx .ppt .pptx .msg .eml (`DiscoveryDefaults.SupportedExtensions`)
+- [x] Technical exclusions (Windows, Program Files, Program Files (x86), Darhous internal directories عبر `AppPaths.ProgramDataRoot` — تُزرع تلقائيًا وبشكل idempotent عند كل تشغيل؛ `$Recycle.Bin`/`System Volume Information`/`Temp` تُستبعد بالاسم أينما ظهرت، مش بمسار ثابت، لأنها موجودة على كل قرص)
+- [x] User exclusions (Drive/Folder/Subfolder) — `IExclusionService.AddUserExclusionAsync`، مُختبرة
+- [x] Initial Discovery Flow: `DiscoveryOrchestrator` — enumerate watch_folders أو drives ← إنشاء `discovery_runs` ← جدولة `DiscoveryScanJob` لكل Root (ملاحظة نطاق: `discovery_runs.status='completed'` معناها "كل الـScan Jobs اتجدولت بنجاح"، مش "كل الملفات اتفهرست فعليًا" — تتبّع الاكتمال الحقيقي (Fan-out/Join) مؤجل، كل `DiscoveryScanJob` بيحدّث نفس عدادات الـRun بشكل مستقل)
+- [x] Continuous Indexing: `FileSystemWatcherService` (Watcher حقيقي لكل watch_folder، "Wait until write complete" عبر `FileReadinessChecker` بيحاول فتح الملف Exclusive بدل Sleep ثابت، إعادة مزامنة قائمة الـWatchers كل 5 دقائق) + `DiscoveryReconciliationService` (Hourly = إعادة فحص watch_folders، Daily = + الأقراص + `MissingFileReconcileJob`، Cadence عالمي في الذاكرة مش لكل مجلد على حدة)
+- [x] Discovery Safety: `DiscoveryScanner` — Stack-based traversal صريح (مش Recursion، تفاديًا لـStack Overflow على أشجار عميقة جدًا)، **لا يقرأ محتوى أي ملف إطلاقًا** (path+extension+size+timestamps فقط)، **لا يتبع Reparse Points/Junctions أبدًا** (يمنع حلقات الفحص اللانهائية)، كل خطأ صلاحيات (`UnauthorizedAccessException`/`IOException`) على مجلد واحد بيتحسب ويكمل الباقي من غير ما يوقف الفحص كله
+- [x] Job model: `DiscoveryScanJob` (Metadata-only enumeration ← يجدول `FileIndexJob` لكل ملف جديد فعليًا، بيتأكد الأول إنه مش معروف مسبقًا عبر `IDocumentVersionRepository.FindByFilePathAsync` الجديدة قبل ما يجدول)، `FileIndexJob` (بينادي `IDocumentService.AddDocumentAsync` الموجودة من Phase 5 مباشرة — الـDedup بالـSHA-256 already built، `managed_move` بيحذف الأصل بعد نجاح النسخ فقط)، `MissingFileReconcileJob` (يفحص كل مستند Indexed-In-Place نشط، `Status=Missing` لو الملف اختفى — اتجاه واحد بس، رجوع الملف مايرجّعش الحالة تلقائيًا لـActive، فجوة موثّقة)
+- [x] "فحص الكمبيوتر بالكامل" كخيار إضافي صريح بعد Onboarding (تحذير نصي عام قبل التنفيذ — حساب عدد الملفات المتوقع مقدمًا يحتاج فحص مبدئي كامل مكرر، اتأجل لتجنب التعقيد الإضافي)
+- **فجوات نطاق موثّقة عن قصد**:
+  - موافقة المستخدم الصريحة على فحص قرص Removable لسه بدون واجهة UI (الـSchema/Service جاهزين: `ISourceDriveRepository`، بس مفيش زرار "فعّل هذا القرص" في الإعدادات بعد)
+  - "Sources View" (SAD §46.8 — عرض كل الكمبيوتر/C:/D:/المجلدات المراقبة/غير مفهرس/الملفات المفقودة كشجرة منطقية) مش في الـImplementation Plan Phase 9 checklist أصلًا، مؤجلة لواجهة إعدادات لاحقة
+  - Import Existing Archive (§47) و"فحص عدد الملفات المتوقع قبل البدء" التفصيلي غير مبنيين بعد — خارج نطاق checklist Phase 9 الرسمي
+- **اختبارات جديدة**: `Darhous.Archive.Persistence.Tests` +6 (`JobRunnerTests` — تنفيذ ناجح، Retry بـBackoff، فشل نهائي بعد Max Retries، ترتيب حسب Priority، Crash Recovery Safe/Unsafe)، مشروع جديد `Darhous.Archive.Modules.Discovery.Tests` (23 اختبار: DiscoveryScanner — امتدادات مدعومة/Recursion تفعيل-تعطيل/استثناء بالمسار/استثناء بالاسم/عدم قراءة المحتوى/Cancellation؛ FileReadinessChecker — ملف جاهز/غير موجود/مقفول/يفك القفل قبل الـTimeout؛ ExclusionService — Idempotent Seeding/استثناء مستخدم؛ WatchFolderService — CRUD أساسي؛ **End-to-end pipeline** — Onboarding→Discovery→Index كامل لملف حقيقي، احترام الاستثناءات، عدم إعادة الفهرسة، `managed_copy` يحافظ على الأصل؛ MissingFileReconcileJob — اتجاهين). **189/189 اختبار على مستوى الحل بالكامل**
+- **DoD (§133):** ✅ drives, ✅ exclusions, ✅ count (عدادات `discovery_runs`), ✅ summary (نفس العدادات، لا واجهة عرض مخصصة بعد), ✅ indexing start, ✅ file watcher, ✅ hourly/daily reconciliation, ✅ missing file state, ✅ no recursion loops, ✅ UI responsive (كل الفحص يعمل داخل Background Jobs، الـUI thread غير مُستخدَم إطلاقًا في `DiscoveryScanner`)
 
 ### Phase 10 — Importers `[ ]`
 *مرجع: §54-58*

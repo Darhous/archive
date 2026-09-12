@@ -1,0 +1,74 @@
+<Window x:Class="Darhous.Archive.Desktop.Views.OnboardingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Darhous Smart Archive — أول تشغيل"
+        Height="480" Width="520"
+        WindowStartupLocation="CenterScreen"
+        FlowDirection="RightToLeft"
+        Background="{DynamicResource AppBackgroundBrush}">
+    <!-- SAD §46.9 (Onboarding — approved decision): choose starting folders, with "scan the
+         whole computer" as a separate, explicit opt-in rather than the default behavior. -->
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    </Window.Resources>
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="16" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="اختر المجلدات التي تريد أرشفتها" Style="{StaticResource BrandHeadingText}" />
+
+        <TextBlock Grid.Row="2" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                   Text="Darhous Smart Archive سيراقب هذه المجلدات ويفهرس المستندات المدعومة فيها تلقائيًا. يمكنك إضافة المزيد لاحقًا من الإعدادات." />
+
+        <Button Grid.Row="4" Content="+ إضافة مجلد" Style="{StaticResource PrimaryButton}"
+                HorizontalAlignment="Right" Click="AddFolder_Click" />
+
+        <ListBox Grid.Row="6" x:Name="FoldersList" ItemsSource="{Binding SelectedFolders}"
+                  BorderThickness="1" Background="{DynamicResource PrimarySurfaceBrush}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding}" Style="{StaticResource BodyText}" VerticalAlignment="Center" />
+                        <Button Grid.Column="1" Content="إزالة" Style="{StaticResource LinkButton}"
+                                Command="{Binding DataContext.RemoveFolderCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                CommandParameter="{Binding}" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBlock Grid.Row="8" Text="{Binding StatusMessage}" Style="{StaticResource SecondaryText}"
+                   TextWrapping="Wrap" Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVisibility}}" />
+
+        <Button Grid.Row="10" Content="فحص الكمبيوتر بالكامل (اختياري)" Style="{StaticResource LinkButton}"
+                Click="ScanFullComputer_Click" />
+
+        <Grid Grid.Row="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="تخطي الآن" Style="{StaticResource LinkButton}" Command="{Binding SkipCommand}" />
+            <Button Grid.Column="2" Content="بدء الأرشفة" Style="{StaticResource PrimaryButton}"
+                    Command="{Binding StartScanningCommand}" IsEnabled="{Binding CanStartScanning}" />
+        </Grid>
+    </Grid>
+</Window>

@@ -6,6 +6,7 @@ using Darhous.Archive.Core.Health;
 using Darhous.Archive.Persistence.Configuration;
 using Darhous.Archive.Persistence.Connections;
 using Darhous.Archive.Persistence.Health;
+using Darhous.Archive.Persistence.Jobs;
 using Darhous.Archive.Persistence.Outbox;
 using Darhous.Archive.Persistence.Repositories;
 using Darhous.Archive.Persistence.Transactions;
@@ -67,9 +68,36 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFolderRepository>(sp =>
             new FolderRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
 
+        services.AddSingleton<IJobRepository>(sp =>
+            new JobRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
+
+        services.AddSingleton<IWatchFolderRepository>(sp =>
+            new WatchFolderRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
+
+        services.AddSingleton<ISourceExclusionRepository>(sp =>
+            new SourceExclusionRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
+
+        services.AddSingleton<ISourceDriveRepository>(sp =>
+            new SourceDriveRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));
+
         services.AddSingleton<InMemoryEventBus>();
         services.AddSingleton<IEventBus, OutboxEventBus>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Wires the Job System runner (SAD §51-53). Call after every module that registers its
+    /// own <see cref="Core.Jobs.IBackgroundJob"/> implementations via <c>AddSingleton&lt;IBackgroundJob, X&gt;()</c> —
+    /// registration order doesn't actually matter (the runner resolves the full
+    /// <c>IEnumerable&lt;IBackgroundJob&gt;</c> once at startup), but calling this last keeps
+    /// composition roots readable.
+    /// </summary>
+    public static IServiceCollection AddJobRunner(this IServiceCollection services, JobRunnerOptions? options = null)
+    {
+        services.AddSingleton(options ?? new JobRunnerOptions());
+        services.AddSingleton<JobRunner>();
+        services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<JobRunner>());
         return services;
     }
 }

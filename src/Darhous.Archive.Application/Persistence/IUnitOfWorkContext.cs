@@ -25,5 +25,15 @@ public interface IUnitOfWorkContext
 
     IOperationSnapshotRepository OperationSnapshots { get; }
 
+    IJobRepository Jobs { get; }
+
+    IWatchFolderRepository WatchFolders { get; }
+
+    ISourceExclusionRepository SourceExclusions { get; }
+
+    ISourceDriveRepository SourceDrives { get; }
+
+    IDiscoveryRunRepository DiscoveryRuns { get; }
+
     IOutboxWriter Outbox { get; }
 }

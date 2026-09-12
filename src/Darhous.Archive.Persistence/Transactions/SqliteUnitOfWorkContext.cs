@@ -26,5 +26,15 @@ internal sealed class SqliteUnitOfWorkContext(SqliteConnection connection, Sqlit
 
     public IOperationSnapshotRepository OperationSnapshots { get; } = new OperationSnapshotRepository(connection, transaction);
 
+    public IJobRepository Jobs { get; } = new JobRepository(connection, transaction);
+
+    public IWatchFolderRepository WatchFolders { get; } = new WatchFolderRepository(connection, transaction);
+
+    public ISourceExclusionRepository SourceExclusions { get; } = new SourceExclusionRepository(connection, transaction);
+
+    public ISourceDriveRepository SourceDrives { get; } = new SourceDriveRepository(connection, transaction);
+
+    public IDiscoveryRunRepository DiscoveryRuns { get; } = new DiscoveryRunRepository(connection, transaction);
+
     public IOutboxWriter Outbox { get; } = new OutboxWriter(connection, transaction);
 }

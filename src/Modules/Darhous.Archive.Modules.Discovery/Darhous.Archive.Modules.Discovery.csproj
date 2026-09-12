@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Darhous.Archive.Core\Darhous.Archive.Core.csproj" />
+    <ProjectReference Include="..\..\Darhous.Archive.Contracts\Darhous.Archive.Contracts.csproj" />
+    <ProjectReference Include="..\..\Darhous.Archive.Application\Darhous.Archive.Application.csproj" />
+    <ProjectReference Include="..\..\Darhous.Archive.Configuration\Darhous.Archive.Configuration.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Modules.Documents\Darhous.Archive.Modules.Documents.csproj" />
+  </ItemGroup>
+
+</Project>

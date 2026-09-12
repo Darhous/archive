@@ -7,6 +7,9 @@ using Darhous.Archive.Application.Persistence;
 using Darhous.Archive.Audit;
 using Darhous.Archive.Configuration;
 using Darhous.Archive.Core.Hosting;
+using Darhous.Archive.Modules.Discovery;
+using Darhous.Archive.Modules.Discovery.Exclusions;
+using Darhous.Archive.Modules.Discovery.WatchFolders;
 using Darhous.Archive.Modules.Documents;
 using Darhous.Archive.Modules.Folders;
 using Darhous.Archive.Desktop.Hosting;
@@ -40,6 +43,8 @@ public partial class App : System.Windows.Application
         builder.Services.AddDocumentsModule();
         builder.Services.AddFoldersModule();
         builder.Services.AddSearchPlugin();
+        builder.Services.AddDiscoveryModule();
+        builder.Services.AddJobRunner();
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginWindow>();
 
@@ -55,6 +60,8 @@ public partial class App : System.Windows.Application
             _host.Services.GetRequiredService<IUnitOfWork>(),
             _host.Services.GetRequiredService<IUserManagementService>(),
             CancellationToken.None);
+
+        await _host.Services.GetRequiredService<IExclusionService>().SeedTechnicalExclusionsAsync(CancellationToken.None);
 
         if (generatedAdminPassword is not null)
         {
@@ -75,8 +82,10 @@ public partial class App : System.Windows.Application
         var loginWindow = _host!.Services.GetRequiredService<LoginWindow>();
         var viewModel = (LoginViewModel)loginWindow.DataContext;
 
-        viewModel.LoginSucceeded += (_, args) =>
+        viewModel.LoginSucceeded += async (_, args) =>
         {
+            await MaybeShowOnboardingAsync(args.Principal);
+
             var explorerViewModel = new ExplorerViewModel(
                 _host.Services.GetRequiredService<Modules.Folders.IFolderService>(),
                 _host.Services.GetRequiredService<IDocumentRepository>(),
@@ -104,6 +113,32 @@ public partial class App : System.Windows.Application
         };
 
         loginWindow.Show();
+    }
+
+    /// <summary>
+    /// SAD §46.9 — shown once, after the first successful login, until the user makes an
+    /// explicit choice (start scanning specific folders, scan the whole computer, or skip).
+    /// Tracked via <see cref="IAppSettingsStore"/> rather than re-checking "are there any
+    /// watch folders yet" so an explicit Skip doesn't re-prompt on every subsequent login.
+    /// </summary>
+    private async Task MaybeShowOnboardingAsync(ArchivePrincipal principal)
+    {
+        var settingsStore = _host!.Services.GetRequiredService<IAppSettingsStore>();
+        var alreadyShown = await settingsStore.GetAsync("onboarding_completed", CancellationToken.None);
+        if (alreadyShown == "true")
+        {
+            return;
+        }
+
+        var onboardingViewModel = new OnboardingViewModel(
+            _host.Services.GetRequiredService<IWatchFolderService>(),
+            _host.Services.GetRequiredService<IDiscoveryOrchestrator>(),
+            principal);
+
+        var onboardingWindow = new OnboardingWindow(onboardingViewModel);
+        onboardingWindow.ShowDialog();
+
+        await settingsStore.SetAsync("onboarding_completed", "true", CancellationToken.None);
     }
 
     protected override async void OnExit(ExitEventArgs e)

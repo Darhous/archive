@@ -16,4 +16,5 @@ public sealed record JobMetadata(
     int RetryCount,
     string? ErrorCode,
     string? ErrorMessage,
-    Guid? CorrelationId);
+    Guid? CorrelationId,
+    string? PayloadJson = null);
