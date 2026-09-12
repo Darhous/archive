@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Darhous.Archive.Core\Darhous.Archive.Core.csproj" />
+    <ProjectReference Include="..\..\Darhous.Archive.Contracts\Darhous.Archive.Contracts.csproj" />
+    <ProjectReference Include="..\..\Darhous.Archive.Application\Darhous.Archive.Application.csproj" />
+    <ProjectReference Include="..\..\Darhous.Archive.Persistence\Darhous.Archive.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

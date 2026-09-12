@@ -17,7 +17,7 @@ namespace Darhous.Archive.Persistence.Jobs;
 /// </summary>
 public sealed class JobRunner(
     IUnitOfWork unitOfWork, IEnumerable<IBackgroundJob> registeredJobs, IClock clock,
-    JobRunnerOptions options, ILogger<JobRunner> logger)
+    JobRunnerOptions options, ILogger<JobRunner> logger, Darhous.Archive.Core.Events.IEventBus eventBus)
     : BackgroundService
 {
     private readonly Dictionary<string, IBackgroundJob> _jobsByType = registeredJobs.ToDictionary(j => j.JobType);
@@ -107,6 +107,16 @@ public sealed class JobRunner(
                 await context.Jobs.MarkFailedAsync(job.Uid, "JOB_FAILED", ex.Message, clock.UtcNow, ct);
                 return null;
             }, cancellationToken);
+
+            var failedEvent = new Darhous.Archive.Contracts.Events.JobFailedEvent(job.JobType, job.Uid, ex.Message);
+            await eventBus.PublishAsync(
+                "job.failed",
+                failedEvent,
+                Darhous.Archive.Contracts.Events.EventDeliveryLevel.Reliable,
+                job.CorrelationId,
+                job.UserId,
+                cancellationToken);
+
             return;
         }
 

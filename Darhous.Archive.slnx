@@ -23,9 +23,12 @@
     <Project Path="src/Darhous.Archive.Modules.Scanner/Darhous.Archive.Modules.Scanner.csproj" />
     <Project Path="src/Modules/Darhous.Archive.Modules.Ocr/Darhous.Archive.Modules.Ocr.csproj" />
     <Project Path="src/Modules/Darhous.Archive.Modules.Reports/Darhous.Archive.Modules.Reports.csproj" />
+    <Project Path="src/Modules/Darhous.Archive.Modules.Notifications/Darhous.Archive.Modules.Notifications.csproj" />
+    <Project Path="src/Modules/Darhous.Archive.Modules.NotificationsTelegram/Darhous.Archive.Modules.NotificationsTelegram.csproj" />
   </Folder>
   <Folder Name="/src/OfficialPlugins/">
     <Project Path="src/OfficialPlugins/Darhous.Search.SqliteFts/Darhous.Search.SqliteFts.csproj" />
+    <Project Path="src/OfficialPlugins/Darhous.Notifications.Windows/Darhous.Notifications.Windows.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Darhous.Archive.Application.Tests/Darhous.Archive.Application.Tests.csproj" />
@@ -48,6 +51,9 @@
     <Project Path="tests/Darhous.Archive.Ocr.Worker.Tests/Darhous.Archive.Ocr.Worker.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.Ocr.Tests/Darhous.Archive.Modules.Ocr.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.Reports.Tests/Darhous.Archive.Modules.Reports.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Modules.Notifications.Tests/Darhous.Archive.Modules.Notifications.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Modules.NotificationsTelegram.Tests/Darhous.Archive.Modules.NotificationsTelegram.Tests.csproj" />
+    <Project Path="tests/Darhous.Notifications.Windows.Tests/Darhous.Notifications.Windows.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Fixtures/">
     <Project Path="tests/Fixtures/Darhous.TestPlugin/Darhous.TestPlugin.csproj" />

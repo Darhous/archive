@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Darhous.Archive.PluginSdk\Darhous.Archive.PluginSdk.csproj" />
+    <ProjectReference Include="..\..\Darhous.Archive.Security\Darhous.Archive.Security.csproj" />
+    <ProjectReference Include="..\Darhous.Archive.Modules.Notifications\Darhous.Archive.Modules.Notifications.csproj" />
+  </ItemGroup>
+
+</Project>

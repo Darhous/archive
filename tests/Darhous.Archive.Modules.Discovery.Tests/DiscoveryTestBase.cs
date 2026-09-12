@@ -1,5 +1,6 @@
 using Darhous.Archive.Application.Persistence;
 using Darhous.Archive.Audit.Writing;
+using Darhous.Archive.Core.Events;
 using Darhous.Archive.Core.Jobs;
 using Darhous.Archive.Core.Time;
 using Darhous.Archive.Modules.Discovery;
@@ -14,6 +15,7 @@ using Darhous.Archive.Persistence;
 using Darhous.Archive.Persistence.Configuration;
 using Darhous.Archive.Persistence.Connections;
 using Darhous.Archive.Persistence.Jobs;
+using Darhous.Archive.Persistence.Outbox;
 using Darhous.Archive.Persistence.Repositories;
 using Darhous.Archive.Persistence.Transactions;
 using Darhous.Archive.Persistence.Writes;
@@ -80,7 +82,8 @@ public abstract class DiscoveryTestBase : IAsyncLifetime
             new FileIndexJob(DocumentService, documentVersionRepository, NullLogger<FileIndexJob>.Instance),
             new MissingFileReconcileJob(DocumentRepository, documentVersionRepository, UnitOfWork, NullLogger<MissingFileReconcileJob>.Instance),
         ];
-        Runner = new JobRunner(UnitOfWork, jobs, new SystemClock(), new JobRunnerOptions { BatchSize = 10 }, NullLogger<JobRunner>.Instance);
+        var eventBus = new OutboxEventBus(new InMemoryEventBus(NullLogger<InMemoryEventBus>.Instance), UnitOfWork);
+        Runner = new JobRunner(UnitOfWork, jobs, new SystemClock(), new JobRunnerOptions { BatchSize = 10 }, NullLogger<JobRunner>.Instance, eventBus);
     }
 
     public async Task DisposeAsync()

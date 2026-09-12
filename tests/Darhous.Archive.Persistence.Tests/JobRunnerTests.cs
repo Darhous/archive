@@ -38,8 +38,26 @@ public class JobRunnerTests : PersistenceTestBase
         return queue;
     }
 
-    private static JobRunner MakeRunner(SqliteUnitOfWork unitOfWork, FakeClock clock, JobRunnerOptions options, params IBackgroundJob[] jobs) =>
-        new(unitOfWork, jobs, clock, options, NullLogger<JobRunner>.Instance);
+    private sealed class TestEventBus : Darhous.Archive.Core.Events.IEventBus
+    {
+        public List<object> PublishedEvents { get; } = new();
+
+        public Task PublishAsync<T>(string eventType, T payload, Darhous.Archive.Contracts.Events.EventDeliveryLevel level, Guid? correlationId, Guid? userId, CancellationToken cancellationToken)
+        {
+            PublishedEvents.Add(payload!);
+            return Task.CompletedTask;
+        }
+
+        public IDisposable Subscribe<T>(Func<Darhous.Archive.Contracts.Events.ArchiveEventEnvelope<T>, CancellationToken, Task> handler)
+        {
+            return new DummyDisposable();
+        }
+
+        private class DummyDisposable : IDisposable { public void Dispose() {} }
+    }
+
+    private static JobRunner MakeRunner(SqliteUnitOfWork unitOfWork, FakeClock clock, JobRunnerOptions options, Darhous.Archive.Core.Events.IEventBus eventBus, params IBackgroundJob[] jobs) =>
+        new(unitOfWork, jobs, clock, options, NullLogger<JobRunner>.Instance, eventBus);
 
     [Fact]
     public async Task RunOnceAsync_ExecutesReadyJob_MarksSucceeded()
@@ -50,7 +68,8 @@ public class JobRunnerTests : PersistenceTestBase
             var unitOfWork = new SqliteUnitOfWork(queue);
             var clock = new FakeClock();
             var job = new RecordingJob("TestJob", () => Task.CompletedTask);
-            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions(), job);
+            var eventBus = new TestEventBus();
+            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions(), eventBus, job);
 
             var uid = await unitOfWork.ExecuteAsync(
                 (context, ct) => context.Jobs.CreateAsync(new NewJob("TestJob", "Tests", null, null, null, MaxRetries: 0, Priority: 0, null), ct),
@@ -78,7 +97,8 @@ public class JobRunnerTests : PersistenceTestBase
             var unitOfWork = new SqliteUnitOfWork(queue);
             var clock = new FakeClock();
             var job = new RecordingJob("FlakyJob", () => throw new InvalidOperationException("boom"));
-            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions { BaseRetryDelay = TimeSpan.FromMinutes(1) }, job);
+            var eventBus = new TestEventBus();
+            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions { BaseRetryDelay = TimeSpan.FromMinutes(1) }, eventBus, job);
 
             var uid = await unitOfWork.ExecuteAsync(
                 (context, ct) => context.Jobs.CreateAsync(new NewJob("FlakyJob", "Tests", null, null, null, MaxRetries: 3, Priority: 0, null), ct),
@@ -110,7 +130,8 @@ public class JobRunnerTests : PersistenceTestBase
             var unitOfWork = new SqliteUnitOfWork(queue);
             var clock = new FakeClock();
             var job = new RecordingJob("AlwaysFailsJob", () => throw new InvalidOperationException("boom"));
-            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions(), job);
+            var eventBus = new TestEventBus();
+            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions(), eventBus, job);
 
             var uid = await unitOfWork.ExecuteAsync(
                 (context, ct) => context.Jobs.CreateAsync(new NewJob("AlwaysFailsJob", "Tests", null, null, null, MaxRetries: 0, Priority: 0, null), ct),
@@ -121,6 +142,11 @@ public class JobRunnerTests : PersistenceTestBase
             var persisted = await unitOfWork.ExecuteAsync((context, ct) => context.Jobs.GetByUidAsync(uid, ct), CancellationToken.None);
             Assert.Equal(JobStatus.Failed, persisted!.Status);
             Assert.Equal("JOB_FAILED", persisted.ErrorCode);
+
+            var published = Assert.Single(eventBus.PublishedEvents);
+            var failedEvent = Assert.IsType<Darhous.Archive.Contracts.Events.JobFailedEvent>(published);
+            Assert.Equal("AlwaysFailsJob", failedEvent.JobType);
+            Assert.Equal("boom", failedEvent.ErrorMessage);
         }
         finally
         {
@@ -165,7 +191,8 @@ public class JobRunnerTests : PersistenceTestBase
             var unitOfWork = new SqliteUnitOfWork(queue);
             var clock = new FakeClock();
             var job = new RecordingJob("ResumableJob", () => Task.CompletedTask, isSafeToResumeAfterCrash: true);
-            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions(), job);
+            var eventBus = new TestEventBus();
+            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions(), eventBus, job);
 
             var uid = await unitOfWork.ExecuteAsync(
                 (context, ct) => context.Jobs.CreateAsync(new NewJob("ResumableJob", "Tests", null, null, null, MaxRetries: 0, Priority: 0, null), ct),
@@ -198,7 +225,8 @@ public class JobRunnerTests : PersistenceTestBase
             var unitOfWork = new SqliteUnitOfWork(queue);
             var clock = new FakeClock();
             var job = new RecordingJob("UnsafeJob", () => Task.CompletedTask, isSafeToResumeAfterCrash: false);
-            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions(), job);
+            var eventBus = new TestEventBus();
+            var runner = MakeRunner(unitOfWork, clock, new JobRunnerOptions(), eventBus, job);
 
             var uid = await unitOfWork.ExecuteAsync(
                 (context, ct) => context.Jobs.CreateAsync(new NewJob("UnsafeJob", "Tests", null, null, null, MaxRetries: 0, Priority: 0, null), ct),
