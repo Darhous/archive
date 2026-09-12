@@ -55,6 +55,9 @@
 - **آخر مرحلة مكتملة (محليًا):** Phase 13 — Worker Infrastructure (تفاصيل كاملة في قسم Phase 13 تحت). Named Pipes IPC حقيقي بـHandshake/Session token/ACL كاملين، Restart policy + Crash-loop quarantine على مستوى Process حقيقي، كتالوج رسائل IPC موثَّق لأول مرة.
 - **العمل القادم:** Commit + Tag (`phase-13`) + Push، ثم Phase 14 — Scanner (§65-67 من الوثيقة الأم): Official Plugin `Darhous.Scanner.Naps2` + Worker `Darhous.Archive.Scanner.Worker` — أول استخدام حقيقي للـWorker Infrastructure اللي بُنيت في Phase 13.
 - **عوائق مفتوحة:** لا يوجد. **ديون تقنية متبقية** (§142): `outbox_events.user_id` و`audit_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود لكل واحد) — هيتحلوا لما نبني lookup فعلي بين Guid uid والـinternal id، مش عاجل. **ملاحظة قديمة:** حساب Admin افتراضي اتنشأ على %ProgramData% الجهاز الحقيقي وقت اختبار Phase 3 — كلمة المرور اتعرضت مرة واحدة واتقفلت قبل الالتقاط؛ امسح `%ProgramData%\DarhousSmartArchive` لو عايز تبدأ من الصفر.
+- **اختبارات Flaky بيئيًا مقبولة (مش Regression، اتأكدت بإعادة تشغيل منفصل):**
+  1. `Darhous.Archive.Desktop.Tests.Explorer.ExplorerViewModelTests.LiveFilter_With100000Documents_CompletesQuickly` — Gate أداء 100k صف، حساس لحمل الجهاز وقت التشغيل المتوازي (موثّق من Phase 7).
+  2. `Darhous.Archive.Workers.Host.Tests.WorkerProcessSupervisorTests` (`RepeatedCrashes_DelaysCorrectlyRequested_ThenFails`, `ThreeCrashesWithinWindow_Quarantined`) — بيشغّلوا Process حقيقي (`Darhous.TestWorkerProcess`) وبيستنوا انتقال حالة خلال نافذة زمنية قصيرة؛ فشلوا فقط لما اتشغّل الحل بالكامل مع بعض (2026-09-12، بعد دمج Phase 13)، ونجحوا 4/4 لما اتشغّلوا لوحدهم (اتأكد مرتين). نفس فئة الحساسية البيئية بالظبط زي رقم 1.
 
 ---
 
