@@ -10,4 +10,5 @@ public sealed record SearchDocumentSnapshot(
     Guid? FolderId,
     DateOnly ArchiveDate,
     string Status,
+    string? Body,
     DateTimeOffset SourceUpdatedAt);

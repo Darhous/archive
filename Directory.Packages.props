@@ -63,6 +63,12 @@
     <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4191.47" />
   </ItemGroup>
 
+  <!-- Phase 15 (OCR): Tesseract is the official OCR provider per master documentation §41.3; PDFsharp imports original pages and adds the invisible text layer without replacing their visual content. -->
+  <ItemGroup>
+    <PackageVersion Include="Tesseract" Version="5.2.0" />
+    <PackageVersion Include="PDFsharp" Version="6.2.4" />
+  </ItemGroup>
+
   <!-- Phase 14 official scanner provider per master doc §38.1. -->
   <ItemGroup>
     <PackageVersion Include="NAPS2.Sdk" Version="1.3.0" />

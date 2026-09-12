@@ -16,7 +16,7 @@ public class PreviewViewModelTests
 
     private static DocumentVersion MakeVersion(Guid uid, Guid documentUid, int versionNo, string extension, string filePath) => new(
         uid, documentUid, versionNo, $"file{extension}", $"stored{extension}", filePath, extension, null, 2048, "abc123", 3,
-        null, null, DateTimeOffset.UtcNow, null, DocumentAvailabilityStatus.Available, null, null, "done", null);
+        null, null, DateTimeOffset.UtcNow, null, DocumentAvailabilityStatus.Available, null, null, "done", null, null, null);
 
     private static (PreviewViewModel ViewModel, FakeDocumentRepository Documents, FakeDocumentVersionRepository Versions, FakeAuditService Audit, FakeAuditQueryService AuditQuery) Build()
     {

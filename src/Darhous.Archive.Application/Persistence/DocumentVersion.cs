@@ -23,4 +23,6 @@ public sealed record DocumentVersion(
     bool? IsSearchablePdf,
     string? OcrProvider,
     string ContentExtractionStatus,
+    string? ExtractedText,
+    string? SearchableFilePath,
     string? Notes);

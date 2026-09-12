@@ -23,7 +23,6 @@ namespace Darhous.Search.SqliteFts.Indexing;
 /// </summary>
 public sealed class SearchReconciliationService(
     IDocumentRepository documentRepository,
-    IDocumentVersionRepository documentVersionRepository,
     ISearchIndexWriter indexWriter,
     ISqliteConnectionFactory connectionFactory,
     SearchIndexingOptions options,
@@ -116,30 +115,30 @@ public sealed class SearchReconciliationService(
             return;
         }
 
-        var (fileName, fileType) = await ResolveFileInfoAsync(document, cancellationToken);
+        var version = await ResolveVersionInfoAsync(document, cancellationToken);
 
         await indexWriter.UpsertAsync(
             new SearchDocumentSnapshot(
-                document.Uid, document.ArchiveNumber, document.Title, fileName, fileType,
-                document.FolderId, document.ArchiveDate, document.Status.ToString(), document.UpdatedAt),
+                document.Uid, document.ArchiveNumber, document.Title, version.FileName, version.FileType,
+                document.FolderId, document.ArchiveDate, document.Status.ToString(), version.Body, document.UpdatedAt),
             cancellationToken);
     }
 
-    private async Task<(string FileName, string? FileType)> ResolveFileInfoAsync(Document document, CancellationToken cancellationToken)
+    private async Task<VersionInfo> ResolveVersionInfoAsync(Document document, CancellationToken cancellationToken)
     {
-        if (document.CurrentVersionId is not { } versionUid)
-        {
-            return (document.Title, null);
-        }
-
-        var version = await documentVersionRepository.GetByUidAsync(versionUid, cancellationToken);
-        if (version is null)
-        {
-            return (document.Title, null);
-        }
-
-        var fileType = version.FileExtension.TrimStart('.').ToLowerInvariant();
-        return (version.OriginalFileName, fileType.Length == 0 ? null : fileType);
+        await using var connection = await connectionFactory.OpenAsync(DatabaseKind.Archive, cancellationToken);
+        var row = await connection.QuerySingleAsync<VersionInfoRow>(new CommandDefinition(
+            """
+            SELECT COALESCE(v.original_file_name, d.title) AS file_name,
+                   NULLIF(LOWER(LTRIM(COALESCE(v.file_extension, ''), '.')), '') AS file_type,
+                   v.extracted_text AS body
+            FROM documents d
+            LEFT JOIN document_versions v ON v.id = d.current_version_id
+            WHERE d.uid = @DocumentUid;
+            """,
+            new { DocumentUid = document.Uid.ToString() },
+            cancellationToken: cancellationToken));
+        return new VersionInfo(row.FileName, row.FileType, row.Body);
     }
 
     private async Task<DateTimeOffset> ReadCheckpointAsync(CancellationToken cancellationToken)
@@ -158,5 +157,14 @@ public sealed class SearchReconciliationService(
             new CommandDefinition("SELECT document_uid FROM search_state;", cancellationToken: cancellationToken));
 
         return uids.Select(Guid.Parse).ToHashSet();
+    }
+
+    private sealed record VersionInfo(string FileName, string? FileType, string? Body);
+
+    private sealed class VersionInfoRow
+    {
+        public string FileName { get; set; } = "";
+        public string? FileType { get; set; }
+        public string? Body { get; set; }
     }
 }

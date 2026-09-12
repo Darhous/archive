@@ -1,4 +1,5 @@
 using Darhous.Archive.Core.Permissions;
+using Darhous.Archive.Persistence.Repositories;
 using Darhous.Search.SqliteFts.Contracts;
 
 namespace Darhous.Search.SqliteFts.Tests;
@@ -16,6 +17,34 @@ public class SearchReconciliationServiceTests : SearchTestBase
 
         Assert.Single(result.Hits);
         Assert.Equal(uid, result.Hits[0].DocumentUid);
+    }
+
+    [Fact]
+    public async Task IncrementalSweep_IndexesExtractedBodyTextNotPresentInTitleOrFileName()
+    {
+        var uid = await AddDocumentAsync("محضر عام");
+        await ReconciliationService.RunIncrementalSweepAsync(CancellationToken.None);
+        Assert.Empty((await QueryService.SearchAsync(new SearchQuery("زرافة"), null, CancellationToken.None)).Hits);
+
+        var document = await new DocumentRepository(ConnectionFactory).GetByUidAsync(uid, CancellationToken.None);
+        Assert.NotNull(document?.CurrentVersionId);
+        await UnitOfWork.ExecuteAsync<object?>(async (context, ct) =>
+        {
+            await context.DocumentVersions.UpdateExtractionResultAsync(
+                document.CurrentVersionId.Value,
+                "done",
+                1,
+                true,
+                "يتضمن هذا المستند كلمة زرافة داخل النص فقط",
+                ct);
+            return null;
+        }, CancellationToken.None);
+
+        await ReconciliationService.RunIncrementalSweepAsync(CancellationToken.None);
+        var result = await QueryService.SearchAsync(new SearchQuery("زرافة"), null, CancellationToken.None);
+
+        var hit = Assert.Single(result.Hits);
+        Assert.Equal(uid, hit.DocumentUid);
     }
 
     [Fact]

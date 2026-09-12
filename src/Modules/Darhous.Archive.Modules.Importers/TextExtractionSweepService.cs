@@ -61,7 +61,7 @@ public sealed class TextExtractionSweepService(
         var extractor = extractors.FirstOrDefault(e => e.CanHandle(version.FileExtension));
         if (extractor is null)
         {
-            await UpdateAsync(version.Uid, ExtractionStatus.Unsupported, null, null, cancellationToken);
+            await UpdateAsync(version.Uid, ExtractionStatus.Unsupported, null, null, null, cancellationToken);
             return;
         }
 
@@ -72,25 +72,31 @@ public sealed class TextExtractionSweepService(
             if (result.IsSearchablePdf == false)
             {
                 // PDF with no text layer — genuinely needs OCR (Phase 15), not an extraction failure.
-                await UpdateAsync(version.Uid, ExtractionStatus.NeedsOcr, result.PageCount, false, cancellationToken);
+                await UpdateAsync(version.Uid, ExtractionStatus.NeedsOcr, result.PageCount, false, null, cancellationToken);
                 await SetDocumentStatusAsync(version.DocumentUid, DocumentStatus.NeedsOcr, cancellationToken);
                 return;
             }
 
-            await UpdateAsync(version.Uid, ExtractionStatus.Done, result.PageCount, result.IsSearchablePdf, cancellationToken);
+            await UpdateAsync(version.Uid, ExtractionStatus.Done, result.PageCount, result.IsSearchablePdf, result.Text, cancellationToken);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Text extraction failed for {FilePath}", version.FilePath);
-            await UpdateAsync(version.Uid, ExtractionStatus.Failed, null, null, cancellationToken);
+            await UpdateAsync(version.Uid, ExtractionStatus.Failed, null, null, null, cancellationToken);
             await SetDocumentStatusAsync(version.DocumentUid, DocumentStatus.IndexFailed, cancellationToken);
         }
     }
 
-    private Task UpdateAsync(Guid versionUid, string status, int? pageCount, bool? isSearchablePdf, CancellationToken cancellationToken) =>
+    private Task UpdateAsync(
+        Guid versionUid,
+        string status,
+        int? pageCount,
+        bool? isSearchablePdf,
+        string? extractedText,
+        CancellationToken cancellationToken) =>
         unitOfWork.ExecuteAsync<object?>(async (context, ct) =>
         {
-            await context.DocumentVersions.UpdateExtractionResultAsync(versionUid, status, pageCount, isSearchablePdf, ct);
+            await context.DocumentVersions.UpdateExtractionResultAsync(versionUid, status, pageCount, isSearchablePdf, extractedText, ct);
             return null;
         }, cancellationToken);
 

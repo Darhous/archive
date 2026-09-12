@@ -78,10 +78,8 @@ public abstract class SearchTestBase : IAsyncLifetime
         IndexWriter = new SearchIndexWriter(_searchWriteQueue, Availability, NullLogger<SearchIndexWriter>.Instance);
 
         var documentRepository = new DocumentRepository(ConnectionFactory);
-        var documentVersionRepository = new DocumentVersionRepository(ConnectionFactory);
-
         ReconciliationService = new SearchReconciliationService(
-            documentRepository, documentVersionRepository, IndexWriter, ConnectionFactory,
+            documentRepository, IndexWriter, ConnectionFactory,
             new SearchIndexingOptions(), NullLogger<SearchReconciliationService>.Instance);
 
         Rebuilder = new SearchIndexRebuilder(_searchWriteQueue, ReconciliationService, Availability, NullLogger<SearchIndexRebuilder>.Instance);

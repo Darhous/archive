@@ -96,6 +96,7 @@ public class TextExtractionSweepServiceTests : IAsyncLifetime
         var version = await _documentVersionRepository.GetByUidAsync(versionUid, CancellationToken.None);
         Assert.Equal("done", version!.ContentExtractionStatus);
         Assert.True(version.IsSearchablePdf);
+        Assert.False(string.IsNullOrWhiteSpace(version.ExtractedText));
     }
 
     [Fact]
@@ -152,5 +153,6 @@ public class TextExtractionSweepServiceTests : IAsyncLifetime
 
         var version = await _documentVersionRepository.GetByUidAsync(versionUid, CancellationToken.None);
         Assert.Equal("done", version!.ContentExtractionStatus);
+        Assert.Equal("محتوى مستند وورد", version.ExtractedText);
     }
 }

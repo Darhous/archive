@@ -23,6 +23,7 @@ public sealed class SearchIndexWriter(
             {
                 var titleNormalized = ArabicNormalization.Normalize(snapshot.Title);
                 var fileNameNormalized = ArabicNormalization.Normalize(snapshot.FileName);
+                var bodyNormalized = snapshot.Body is null ? string.Empty : ArabicNormalization.Normalize(snapshot.Body);
                 var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 var archiveDate = snapshot.ArchiveDate.ToString("yyyy-MM-dd");
 
@@ -51,8 +52,8 @@ public sealed class SearchIndexWriter(
                         transaction, cancellationToken: ct));
 
                     await connection.ExecuteAsync(new CommandDefinition(
-                        "UPDATE documents_fts SET title = @Title, file_name = @FileName WHERE rowid = @DocumentId;",
-                        new { Title = titleNormalized, FileName = fileNameNormalized, DocumentId = documentId },
+                        "UPDATE documents_fts SET title = @Title, file_name = @FileName, body = @Body WHERE rowid = @DocumentId;",
+                        new { Title = titleNormalized, FileName = fileNameNormalized, Body = bodyNormalized, DocumentId = documentId },
                         transaction, cancellationToken: ct));
                 }
                 else
@@ -78,8 +79,8 @@ public sealed class SearchIndexWriter(
                         "SELECT last_insert_rowid();", transaction: transaction, cancellationToken: ct));
 
                     await connection.ExecuteAsync(new CommandDefinition(
-                        "INSERT INTO documents_fts(rowid, document_id, title, file_name, metadata, body) VALUES (@Id, @Id, @Title, @FileName, '', '');",
-                        new { Id = documentId, Title = titleNormalized, FileName = fileNameNormalized },
+                        "INSERT INTO documents_fts(rowid, document_id, title, file_name, metadata, body) VALUES (@Id, @Id, @Title, @FileName, '', @Body);",
+                        new { Id = documentId, Title = titleNormalized, FileName = fileNameNormalized, Body = bodyNormalized },
                         transaction, cancellationToken: ct));
                 }
 

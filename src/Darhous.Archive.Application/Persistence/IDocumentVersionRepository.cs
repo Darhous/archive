@@ -21,6 +21,30 @@ public interface IDocumentVersionRepository
     /// <summary>Phase 10 (Importers) — versions still awaiting text/metadata extraction, oldest first.</summary>
     Task<IReadOnlyList<DocumentVersion>> ListPendingExtractionAsync(int limit, CancellationToken cancellationToken);
 
-    /// <summary>Must run inside <see cref="IUnitOfWork"/> — records the outcome of one extraction attempt.</summary>
-    Task UpdateExtractionResultAsync(Guid versionUid, string contentExtractionStatus, int? pageCount, bool? isSearchablePdf, CancellationToken cancellationToken);
+    /// <summary>Phase 15 (OCR) — versions whose PDF text-layer check already determined that OCR is required.</summary>
+    Task<IReadOnlyList<DocumentVersion>> ListNeedingOcrAsync(int limit, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Must run inside <see cref="IUnitOfWork"/> — records the outcome of one extraction attempt,
+    /// including durable body text. The parent document timestamp is advanced so search reconciliation
+    /// observes the new body.
+    /// </summary>
+    Task UpdateExtractionResultAsync(
+        Guid versionUid,
+        string contentExtractionStatus,
+        int? pageCount,
+        bool? isSearchablePdf,
+        string? extractedText,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Must run inside <see cref="IUnitOfWork"/> — records a successful OCR result without mutating
+    /// the original file. <paramref name="searchableFilePath"/> points to a derived archive-storage copy.
+    /// </summary>
+    Task UpdateOcrResultAsync(
+        Guid versionUid,
+        string extractedText,
+        string searchableFilePath,
+        string ocrProvider,
+        CancellationToken cancellationToken);
 }

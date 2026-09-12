@@ -104,7 +104,9 @@ internal sealed class FakeDocumentVersionRepository : IDocumentVersionRepository
         Task.FromResult<IReadOnlyList<DocumentVersion>>(AllVersions.Where(v => v.DocumentUid == documentUid).ToList());
 
     public Task<IReadOnlyList<DocumentVersion>> ListPendingExtractionAsync(int limit, CancellationToken ct) => throw new NotImplementedException();
-    public Task UpdateExtractionResultAsync(Guid versionUid, string status, int? pageCount, bool? isSearchablePdf, CancellationToken ct) => throw new NotImplementedException();
+    public Task<IReadOnlyList<DocumentVersion>> ListNeedingOcrAsync(int limit, CancellationToken ct) => throw new NotImplementedException();
+    public Task UpdateExtractionResultAsync(Guid versionUid, string status, int? pageCount, bool? isSearchablePdf, string? extractedText, CancellationToken ct) => throw new NotImplementedException();
+    public Task UpdateOcrResultAsync(Guid versionUid, string extractedText, string searchableFilePath, string ocrProvider, CancellationToken ct) => throw new NotImplementedException();
 }
 
 internal sealed class FakeAuditService : IAuditService

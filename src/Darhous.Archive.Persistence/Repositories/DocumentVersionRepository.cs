@@ -16,7 +16,8 @@ public sealed class DocumentVersionRepository : IDocumentVersionRepository
         SELECT v.uid, d.uid AS document_uid, v.version_no, v.original_file_name, v.stored_file_name,
                v.file_path, v.file_extension, v.mime_type, v.file_size, v.sha256, v.page_count,
                v.file_created_at, v.file_modified_at, v.imported_at, u.uid AS created_by,
-               v.availability_status, v.is_searchable_pdf, v.ocr_provider, v.content_extraction_status, v.notes
+               v.availability_status, v.is_searchable_pdf, v.ocr_provider, v.content_extraction_status,
+               v.extracted_text, v.searchable_file_path, v.notes
         FROM document_versions v
         JOIN documents d ON d.id = v.document_id
         LEFT JOIN app_users u ON u.id = v.created_by
@@ -130,23 +131,95 @@ public sealed class DocumentVersionRepository : IDocumentVersionRepository
         return readRows.Select(Map).ToList();
     }
 
-    public Task UpdateExtractionResultAsync(Guid versionUid, string contentExtractionStatus, int? pageCount, bool? isSearchablePdf, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DocumentVersion>> ListNeedingOcrAsync(int limit, CancellationToken cancellationToken)
+    {
+        var sql = $"{SelectColumns} WHERE v.content_extraction_status = 'needs_ocr' ORDER BY v.imported_at LIMIT @Limit;";
+        var parameters = new { Limit = limit };
+
+        if (_boundConnection is not null)
+        {
+            var rows = await _boundConnection.QueryAsync<DocumentVersionRow>(
+                new CommandDefinition(sql, parameters, _boundTransaction, cancellationToken: cancellationToken));
+            return rows.Select(Map).ToList();
+        }
+
+        await using var connection = await _connectionFactory!.OpenAsync(DatabaseKind.Archive, cancellationToken);
+        var readRows = await connection.QueryAsync<DocumentVersionRow>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        return readRows.Select(Map).ToList();
+    }
+
+    public async Task UpdateExtractionResultAsync(
+        Guid versionUid,
+        string contentExtractionStatus,
+        int? pageCount,
+        bool? isSearchablePdf,
+        string? extractedText,
+        CancellationToken cancellationToken)
     {
         if (_boundConnection is null)
         {
             throw new InvalidOperationException($"{nameof(DocumentVersionRepository)}.{nameof(UpdateExtractionResultAsync)} must run inside IUnitOfWork.ExecuteAsync.");
         }
 
-        return _boundConnection.ExecuteAsync(new CommandDefinition(
+        await _boundConnection.ExecuteAsync(new CommandDefinition(
             """
             UPDATE document_versions
-            SET content_extraction_status = @Status, page_count = @PageCount, is_searchable_pdf = @IsSearchablePdf
+            SET content_extraction_status = @Status, page_count = @PageCount,
+                is_searchable_pdf = @IsSearchablePdf, extracted_text = @ExtractedText
             WHERE uid = @Uid;
             """,
-            new { Uid = versionUid.ToString(), Status = contentExtractionStatus, PageCount = pageCount, IsSearchablePdf = isSearchablePdf },
+            new
+            {
+                Uid = versionUid.ToString(), Status = contentExtractionStatus, PageCount = pageCount,
+                IsSearchablePdf = isSearchablePdf, ExtractedText = extractedText,
+            },
             _boundTransaction,
             cancellationToken: cancellationToken));
+
+        await TouchParentDocumentAsync(versionUid, cancellationToken);
     }
+
+    public async Task UpdateOcrResultAsync(
+        Guid versionUid,
+        string extractedText,
+        string searchableFilePath,
+        string ocrProvider,
+        CancellationToken cancellationToken)
+    {
+        if (_boundConnection is null)
+        {
+            throw new InvalidOperationException($"{nameof(DocumentVersionRepository)}.{nameof(UpdateOcrResultAsync)} must run inside IUnitOfWork.ExecuteAsync.");
+        }
+
+        await _boundConnection.ExecuteAsync(new CommandDefinition(
+            """
+            UPDATE document_versions
+            SET content_extraction_status = 'done', is_searchable_pdf = 1,
+                extracted_text = @ExtractedText, searchable_file_path = @SearchableFilePath,
+                ocr_provider = @OcrProvider
+            WHERE uid = @Uid;
+            """,
+            new
+            {
+                Uid = versionUid.ToString(), ExtractedText = extractedText,
+                SearchableFilePath = searchableFilePath, OcrProvider = ocrProvider,
+            },
+            _boundTransaction,
+            cancellationToken: cancellationToken));
+
+        await TouchParentDocumentAsync(versionUid, cancellationToken);
+    }
+
+    private Task TouchParentDocumentAsync(Guid versionUid, CancellationToken cancellationToken) =>
+        _boundConnection!.ExecuteAsync(new CommandDefinition(
+            """
+            UPDATE documents
+            SET updated_at = MAX(updated_at + 1, @Now)
+            WHERE id = (SELECT document_id FROM document_versions WHERE uid = @Uid);
+            """,
+            new { Uid = versionUid.ToString(), Now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() },
+            _boundTransaction,
+            cancellationToken: cancellationToken));
 
     private async Task<DocumentVersion?> QuerySingleAsync(string sql, object parameters, CancellationToken cancellationToken)
     {
@@ -191,7 +264,7 @@ public sealed class DocumentVersionRepository : IDocumentVersionRepository
         DateTimeOffset.FromUnixTimeMilliseconds(row.ImportedAt),
         row.CreatedBy is null ? null : Guid.Parse(row.CreatedBy),
         ParseAvailability(row.AvailabilityStatus), row.IsSearchablePdf == 1, row.OcrProvider,
-        row.ContentExtractionStatus, row.Notes);
+        row.ContentExtractionStatus, row.ExtractedText, row.SearchableFilePath, row.Notes);
 
     private sealed class DocumentVersionRow
     {
@@ -214,6 +287,8 @@ public sealed class DocumentVersionRepository : IDocumentVersionRepository
         public long? IsSearchablePdf { get; set; }
         public string? OcrProvider { get; set; }
         public string ContentExtractionStatus { get; set; } = "";
+        public string? ExtractedText { get; set; }
+        public string? SearchableFilePath { get; set; }
         public string? Notes { get; set; }
     }
 }
