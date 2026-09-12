@@ -17,4 +17,10 @@ public interface IDocumentVersionRepository
     Task<DocumentVersion?> FindByFilePathAsync(string filePath, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<DocumentVersion>> ListForDocumentAsync(Guid documentUid, CancellationToken cancellationToken);
+
+    /// <summary>Phase 10 (Importers) — versions still awaiting text/metadata extraction, oldest first.</summary>
+    Task<IReadOnlyList<DocumentVersion>> ListPendingExtractionAsync(int limit, CancellationToken cancellationToken);
+
+    /// <summary>Must run inside <see cref="IUnitOfWork"/> — records the outcome of one extraction attempt.</summary>
+    Task UpdateExtractionResultAsync(Guid versionUid, string contentExtractionStatus, int? pageCount, bool? isSearchablePdf, CancellationToken cancellationToken);
 }

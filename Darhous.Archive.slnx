@@ -13,6 +13,7 @@
     <Project Path="src/Modules/Darhous.Archive.Modules.Discovery/Darhous.Archive.Modules.Discovery.csproj" />
     <Project Path="src/Modules/Darhous.Archive.Modules.Documents/Darhous.Archive.Modules.Documents.csproj" />
     <Project Path="src/Modules/Darhous.Archive.Modules.Folders/Darhous.Archive.Modules.Folders.csproj" />
+    <Project Path="src/Modules/Darhous.Archive.Modules.Importers/Darhous.Archive.Modules.Importers.csproj" />
   </Folder>
   <Folder Name="/src/OfficialPlugins/">
     <Project Path="src/OfficialPlugins/Darhous.Search.SqliteFts/Darhous.Search.SqliteFts.csproj" />
@@ -26,6 +27,7 @@
     <Project Path="tests/Darhous.Archive.Modules.Discovery.Tests/Darhous.Archive.Modules.Discovery.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.Documents.Tests/Darhous.Archive.Modules.Documents.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.Folders.Tests/Darhous.Archive.Modules.Folders.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Modules.Importers.Tests/Darhous.Archive.Modules.Importers.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Persistence.Tests/Darhous.Archive.Persistence.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Security.Tests/Darhous.Archive.Security.Tests.csproj" />
     <Project Path="tests/Darhous.Search.SqliteFts.Tests/Darhous.Search.SqliteFts.Tests.csproj" />

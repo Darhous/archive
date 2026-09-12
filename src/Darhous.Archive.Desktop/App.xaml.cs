@@ -12,6 +12,7 @@ using Darhous.Archive.Modules.Discovery.Exclusions;
 using Darhous.Archive.Modules.Discovery.WatchFolders;
 using Darhous.Archive.Modules.Documents;
 using Darhous.Archive.Modules.Folders;
+using Darhous.Archive.Modules.Importers;
 using Darhous.Archive.Desktop.Hosting;
 using Darhous.Archive.Desktop.Themes;
 using Darhous.Archive.Desktop.ViewModels;
@@ -44,6 +45,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddFoldersModule();
         builder.Services.AddSearchPlugin();
         builder.Services.AddDiscoveryModule();
+        builder.Services.AddImportersModule();
         builder.Services.AddJobRunner();
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginWindow>();

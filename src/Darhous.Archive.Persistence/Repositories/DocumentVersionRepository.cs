@@ -113,6 +113,41 @@ public sealed class DocumentVersionRepository : IDocumentVersionRepository
         return readRows.Select(Map).ToList();
     }
 
+    public async Task<IReadOnlyList<DocumentVersion>> ListPendingExtractionAsync(int limit, CancellationToken cancellationToken)
+    {
+        var sql = $"{SelectColumns} WHERE v.content_extraction_status = 'pending' ORDER BY v.imported_at LIMIT @Limit;";
+        var parameters = new { Limit = limit };
+
+        if (_boundConnection is not null)
+        {
+            var rows = await _boundConnection.QueryAsync<DocumentVersionRow>(
+                new CommandDefinition(sql, parameters, _boundTransaction, cancellationToken: cancellationToken));
+            return rows.Select(Map).ToList();
+        }
+
+        await using var connection = await _connectionFactory!.OpenAsync(DatabaseKind.Archive, cancellationToken);
+        var readRows = await connection.QueryAsync<DocumentVersionRow>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        return readRows.Select(Map).ToList();
+    }
+
+    public Task UpdateExtractionResultAsync(Guid versionUid, string contentExtractionStatus, int? pageCount, bool? isSearchablePdf, CancellationToken cancellationToken)
+    {
+        if (_boundConnection is null)
+        {
+            throw new InvalidOperationException($"{nameof(DocumentVersionRepository)}.{nameof(UpdateExtractionResultAsync)} must run inside IUnitOfWork.ExecuteAsync.");
+        }
+
+        return _boundConnection.ExecuteAsync(new CommandDefinition(
+            """
+            UPDATE document_versions
+            SET content_extraction_status = @Status, page_count = @PageCount, is_searchable_pdf = @IsSearchablePdf
+            WHERE uid = @Uid;
+            """,
+            new { Uid = versionUid.ToString(), Status = contentExtractionStatus, PageCount = pageCount, IsSearchablePdf = isSearchablePdf },
+            _boundTransaction,
+            cancellationToken: cancellationToken));
+    }
+
     private async Task<DocumentVersion?> QuerySingleAsync(string sql, object parameters, CancellationToken cancellationToken)
     {
         if (_boundConnection is not null)

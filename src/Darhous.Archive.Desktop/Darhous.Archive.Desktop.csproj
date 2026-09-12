@@ -22,6 +22,7 @@
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Documents\Darhous.Archive.Modules.Documents.csproj" />
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Folders\Darhous.Archive.Modules.Folders.csproj" />
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Discovery\Darhous.Archive.Modules.Discovery.csproj" />
+    <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Importers\Darhous.Archive.Modules.Importers.csproj" />
     <ProjectReference Include="..\OfficialPlugins\Darhous.Search.SqliteFts\Darhous.Search.SqliteFts.csproj" />
   </ItemGroup>
 
