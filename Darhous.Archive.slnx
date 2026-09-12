@@ -9,6 +9,8 @@
     <Project Path="src/Darhous.Archive.Persistence/Darhous.Archive.Persistence.csproj" />
     <Project Path="src/Darhous.Archive.PluginSdk/Darhous.Archive.PluginSdk.csproj" />
     <Project Path="src/Darhous.Archive.Security/Darhous.Archive.Security.csproj" />
+    <Project Path="src/Darhous.Archive.Workers/Darhous.Archive.Workers.csproj" />
+    <Project Path="src/Darhous.Archive.Workers.Host/Darhous.Archive.Workers.Host.csproj" />
   </Folder>
   <Folder Name="/src/Modules/">
     <Project Path="src/Modules/Darhous.Archive.Modules.Discovery/Darhous.Archive.Modules.Discovery.csproj" />
@@ -33,9 +35,12 @@
     <Project Path="tests/Darhous.Archive.Modules.Plugins.Tests/Darhous.Archive.Modules.Plugins.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Persistence.Tests/Darhous.Archive.Persistence.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Security.Tests/Darhous.Archive.Security.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Workers.Tests/Darhous.Archive.Workers.Tests.csproj" />
+    <Project Path="tests/Darhous.Archive.Workers.Host.Tests/Darhous.Archive.Workers.Host.Tests.csproj" />
     <Project Path="tests/Darhous.Search.SqliteFts.Tests/Darhous.Search.SqliteFts.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Fixtures/">
     <Project Path="tests/Fixtures/Darhous.TestPlugin/Darhous.TestPlugin.csproj" />
+    <Project Path="tests/Fixtures/Darhous.TestWorkerProcess/Darhous.TestWorkerProcess.csproj" />
   </Folder>
 </Solution>

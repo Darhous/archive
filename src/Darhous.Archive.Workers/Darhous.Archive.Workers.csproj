@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Darhous.Archive.Configuration\Darhous.Archive.Configuration.csproj" />
+  </ItemGroup>
+
+</Project>

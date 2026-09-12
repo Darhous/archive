@@ -49,11 +49,11 @@
 
 > **حدّث هذا القسم يدويًا كل مرة تبدأ فيها جلسة عمل جديدة.**
 
-- **المرحلة الحالية:** Phase 12 (Plugin Platform) مكتملة محليًا، 224/224 اختبار ناجح على مستوى الحل (213 سابقين + 11 جديد لـModules.Plugins.Tests)، Debug build نظيف. جاري تجهيز Release build/test نهائي ثم Commit+Push، ثم Phase 13 (Worker Infrastructure).
-- **Repository:** https://github.com/Darhous/archive — Phase 0-10 مدفوعة على `main`، CI شغّال. Phase 11-12 لسه محليًا وقت كتابة السطر ده.
+- **المرحلة الحالية:** Phase 13 (Worker Infrastructure) مكتملة محليًا — نُفّذت لأول مرة عبر تقسيم عمل بين Codex وGemini/AntiGravity على Worktrees منفصلة (راجع [[feedback_orchestration_worktrees]])، ثم مراجعة وتحقق مستقل ودمج يدوي مني في `main`. جاري تجهيز Debug build/test نهائي على مستوى الحل ثم Commit+Tag+Push، ثم Phase 14 (Scanner).
+- **Repository:** https://github.com/Darhous/archive — Phase 0-10 مدفوعة على `main`، CI شغّال. Phase 11-13 لسه محليًا وقت كتابة السطر ده.
 - **آخر مرحلة مكتملة (مدفوعة):** Phase 10 — Importers.
-- **آخر مرحلة مكتملة (محليًا):** Phase 12 — Plugin Platform (224/224 اختبار، تفاصيل كاملة في قسم Phase 12 تحت). In-Process Plugin Host فعلي، Manifest/Signature/Checksum validation، Install/Enable/Disable/Update/Rollback/Remove، Crash-loop quarantine.
-- **العمل القادم:** Commit + Push لـPhase 11+12، ثم Phase 13 — Worker Infrastructure (§مرجع في القسم 2): Named Pipes، Handshake، Session token، Health، Restart policy، Crash loop detection، Quarantine، Worker Protocol (length-prefixed UTF-8 JSON).
+- **آخر مرحلة مكتملة (محليًا):** Phase 13 — Worker Infrastructure (تفاصيل كاملة في قسم Phase 13 تحت). Named Pipes IPC حقيقي بـHandshake/Session token/ACL كاملين، Restart policy + Crash-loop quarantine على مستوى Process حقيقي، كتالوج رسائل IPC موثَّق لأول مرة.
+- **العمل القادم:** Commit + Tag (`phase-13`) + Push، ثم Phase 14 — Scanner (§65-67 من الوثيقة الأم): Official Plugin `Darhous.Scanner.Naps2` + Worker `Darhous.Archive.Scanner.Worker` — أول استخدام حقيقي للـWorker Infrastructure اللي بُنيت في Phase 13.
 - **عوائق مفتوحة:** لا يوجد. **ديون تقنية متبقية** (§142): `outbox_events.user_id` و`audit_events.user_id` لسه NULL دايمًا (TODO موثّق في الكود لكل واحد) — هيتحلوا لما نبني lookup فعلي بين Guid uid والـinternal id، مش عاجل. **ملاحظة قديمة:** حساب Admin افتراضي اتنشأ على %ProgramData% الجهاز الحقيقي وقت اختبار Phase 3 — كلمة المرور اتعرضت مرة واحدة واتقفلت قبل الالتقاط؛ امسح `%ProgramData%\DarhousSmartArchive` لو عايز تبدأ من الصفر.
 
 ---
@@ -312,12 +312,47 @@ Performance → Installer
 - **الخدمات الرسمية المكشوفة فعليًا للـPlugins الآن (Plugin SDK §23):** `IDocumentService`, `IFolderService`, `IAuditService`, `IEventBus`, `IClock` — دول الوحيدين الموجودين فعلاً في DI اليوم. باقي القائمة (`ITagService`/`ISearchService`/`IUserContext`/`IJobService`/`INotificationService`/`ISettingsService`/`IHealthService`) هيتوصل في `App.xaml.cs` `exposeHostServices` لما تلك الخدمات تُبنى في مراحل لاحقة — فجوة نطاق موثّقة، مش نسيان.
 - 11 اختبار جديد (`Darhous.Archive.Modules.Plugins.Tests`) — تغطي مسارات الرفض الأمنية (توقيع غير موثوق، توقيع مفقود، Checksum تالف، توافق إصدار Core) ومسارات النجاح (Install→Enable→Disable→Remove، منح صلاحيات، Circular/Unmet dependencies، Crash-loop quarantine).
 
-### Phase 13 — Worker Infrastructure `[ ]`
-*مرجع: §63-64*
-- [ ] Named Pipes + Handshake + Session token
-- [ ] Health, Restart policy, Crash loop detection, Quarantine
-- [ ] Worker Protocol: Length-prefixed UTF-8 JSON
-- [ ] ⚠️ **كتابة كتالوج رسائل IPC الفعلي هنا (فجوة كانت مؤجلة — الآن وقتها)**
+### Phase 13 — Worker Infrastructure `[x]`
+*مرجع: §63-69*
+- [x] Named Pipes + Handshake + Session token
+- [x] Health, Restart policy, Crash loop detection, Quarantine
+- [x] Worker Protocol: Length-prefixed UTF-8 JSON
+- [x] ⚠️ **كتالوج رسائل IPC الفعلي (كان فجوة مؤجلة من §2 — اتحل الآن):**
+
+**كتالوج رسائل IPC (Worker Protocol v1):**
+
+كل رسالة = Frame بادئة طولها 4 بايت (Unsigned، Big-Endian) + جسم JSON بترميز UTF-8 (الحد الأقصى للـFrame: 16 ميجابايت كحماية DoS، مش رقم موثّق في الـSpec). الـEnvelope حسب §64 بالحرف:
+```
+{ protocolVersion, messageType, requestId, correlationId, payload }
+```
+
+رسائل الـHandshake (بالترتيب الإلزامي من §67 — كلها Worker→Host، رفض أي رسالة خارج الترتيب أو بتوكن غلط):
+
+| # | messageType | Payload |
+|---|---|---|
+| 1 | `handshake.protocol-version` | `{ protocolVersion }` |
+| 2 | `handshake.worker-id` | `{ workerId }` |
+| 3 | `handshake.worker-version` | `{ workerVersion }` |
+| 4 | `handshake.session-token` | `{ sessionToken }` (يتقارن بـ`CryptographicOperations.FixedTimeEquals`) |
+| 5 | `handshake.capabilities` | `{ capabilities: string[] }` |
+| 6 | `handshake.health` | `{ status, detail? }` |
+| 7 | `handshake.ready` | `{ isReady: bool }` |
+
+رسالة نقل البيانات الكبيرة (§65):
+
+| messageType | Payload | الغرض |
+|---|---|---|
+| `data.path-reference` | `{ path }` | بدل نقل الملف كـBase64 عبر الـPipe — الـPath لازم يكون جوه `ManagedTempRoot` القابل للحقن عبر `WorkerProtocolOptions`، والـHost يتحقق منه قبل الاستيراد |
+
+**ملاحظة صريحة (موثّقة في `WORKER_REPORT.md` بتاع الجزء الأول)**: أسماء الرسائل دي وشكل الـPayload اختراع مدروس لأن §64-67 بتوصف التسلسل والحقول الخمسة بس، مش كتالوج رسائل فعلي بالاسم — أول كتالوج حقيقي وموثَّق رسميًا هو ده، وأي Worker مستقبلي (Scanner Phase 14، OCR Phase 15) لازم يتبعه حرفيًا.
+
+- **DoD (§135):** جاهز — Named Pipes حقيقي، Handshake الكامل §67 مُختبَر بمسار نجاح ورفض، Session token عشوائي 32-بايت بمقارنة Fixed-Time، Pipe ACL حقيقي (SID المستخدم الحالي بس)، Restart policy بالأرقام الحرفية من §68 (فوري/5ث/30ث/Failed)، Crash-loop بنفس سياسة Phase 12 (3/10 دقائق → Quarantined). **لسه مش موصول بـApp.xaml.cs composition root** — البنية التحتية جاهزة ومُختبرة زي ما حصل بالظبط مع Search Engine في Phase 8، الربط بـWorker حقيقي (Scanner) هيحصل في Phase 14.
+
+**قرارات معمارية وفجوات موثّقة (المرحلة دي اتنفّذت بالتوازي عبر 2 Engineer منفصلين على Worktree مستقل لكل واحد، ثم مراجعة ودمج يدوي — راجع [[feedback_orchestration_worktrees]]):**
+- **الجزء الأول (البروتوكول/النقل، `Darhous.Archive.Workers`)**: Frame codec بادئة طول 4 بايت + حد أقصى 16 ميجابايت (حماية DoS غير موثّقة في الـSpec)، `NamedPipeServerStreamAcl`/`PipeSecurity` مقيّد بـSID المستخدم الحالي فقط، الـHandshake State Machine على الجانبين (Client/Host) بترفض أي رسالة خارج الترتيب أو بتوكن غلط. **فجوات أمنية حقيقية موثّقة بصراحة في `WORKER_REPORT.md` بتاعه** (تقييم ذاتي 6/10، مش 10/10): الـManaged-Temp-Path validator نصّي (Lexical) بس — معرّض لـReparse Point/Symlink يخرج بره الـRoot، ومفيش TOCTOU protection حقيقية؛ مفيش رد Host صريح (accepted/rejected) بعد آخر رسالة Handshake؛ مفيش اختبار ACL عبر حساب Windows تاني فعليًا. دي فجوات Hardening حقيقية هتتحل قبل السماح لأي Worker غير موثوق (Scanner/OCR الرسميين مش مشكلة، Third-party workers مستقبلية هي الخطر الحقيقي) — موثّقة كـTODO مش نسيان.
+- **الجزء الثاني (الإشراف على الـProcess، `Darhous.Archive.Workers.Host`)**: `WorkerProcessSupervisor` بيدير Process حقيقي (`System.Diagnostics.Process`)، `IWorkerDelayProvider` قابل للحقن عشان الاختبارات تتحقق من التأخيرات المطلوبة (5ث/30ث) من غير ما تستنى فعليًا. **قرار تفسير موثّق**: لما عداد الأعطال يوصل لعتبة الـCrash-loop (3 افتراضيًا) في نفس اللحظة اللي المفروض فيها ننتظر تأخير Attempt 3 (30 ثانية)، اخترنا نطبّق الـQuarantine فورًا بدل الانتظار — التأخير الثالث بيتطبّق بس لو الأعطال متباعدة زمنيًا وطلعت بره نافذة الـ10-دقائق. **ملاحظة مراجعة (اكتُشفت أثناء مراجعتي الشخصية، مش من تقرير الـWorker)**: فيه تضارب أقفال محتمل بين `StopAsync` (بياخد `_lock` طول مدة انتظاره لحد 5 ثواني على الـmonitor task) و`HandleCrashAsync` (بيحاول ياخد نفس الـ`_lock` وهو جوه تأخير Restart) — بيتحل تلقائيًا بعد الـ5 ثواني Timeout ومش بيعلّق للأبد، بس تصميم أنضف للـLock discipline مطلوب قبل أي استخدام إنتاجي حقيقي. تم حذف كود ميت حقيقي (`IDelayProvider`/`DefaultDelayProvider` — تصميم أولي اتستبدل بـ`IWorkerDelayProvider` ومتنسيش يتشال) وقت الدمج.
+- **25 اختبار جديد** (21 لـ`Darhous.Archive.Workers.Tests` + 4 لـ`Darhous.Archive.Workers.Host.Tests`) — راجعتهم بنفسي (مش بس التقارير) وشغّلتهم مستقل قبل الدمج، الاتنين نجحوا 100% فعليًا.
+- Fixture حقيقي منفصل `Darhous.TestWorkerProcess` (Console app بسيط بيقرأ `TESTWORKER_CRASH` من الـEnvironment، مش IPC-aware — تعمّد يكون بسيط عشان يثبت منطق الإشراف بمعزل عن البروتوكول).
 
 ### Phase 14 — Scanner `[ ]`
 *مرجع: §65-67*
