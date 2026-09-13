@@ -13,6 +13,7 @@ using Darhous.Archive.Modules.Discovery.WatchFolders;
 using Darhous.Archive.Modules.Documents;
 using Darhous.Archive.Modules.Folders;
 using Darhous.Archive.Modules.Importers;
+using Darhous.Archive.Modules.Ai;
 using Darhous.Archive.Modules.Plugins;
 using Darhous.Archive.Modules.Reports;
 using Darhous.Archive.Modules.Reports.Printing;
@@ -27,6 +28,7 @@ using Darhous.Archive.Desktop.Themes;
 using Darhous.Archive.Desktop.ViewModels;
 using Darhous.Archive.Desktop.ViewModels.Explorer;
 using Darhous.Archive.Desktop.ViewModels.Explorer.Preview;
+using Darhous.Archive.Desktop.ViewModels.Settings;
 using Darhous.Archive.Desktop.Views;
 using Darhous.Archive.Persistence;
 using Darhous.Archive.Persistence.Configuration;
@@ -57,6 +59,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSearchPlugin();
         builder.Services.AddDiscoveryModule();
         builder.Services.AddImportersModule();
+        builder.Services.AddAiModule();
         builder.Services.AddReportsModule();
         builder.Services.AddLocalBackupPlugin();
         builder.Services.AddJobRunner();
@@ -81,6 +84,8 @@ public partial class App : System.Windows.Application
         });
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginWindow>();
+        builder.Services.AddTransient<AiSettingsViewModel>();
+        builder.Services.AddTransient<AiSettingsWindow>();
 
         _host = builder.Build();
 
@@ -145,6 +150,7 @@ public partial class App : System.Windows.Application
                 _host.Services.GetRequiredService<IUpdateService>(),
                 _host.Services.GetRequiredService<IUpdateSettingsService>(),
                 _host.Services.GetRequiredService<IUpdateRequestService>(),
+                aiSettingsWindowFactory: () => _host.Services.GetRequiredService<AiSettingsWindow>(),
                 onLogout: ShowLoginWindow);
 
             explorer.Show();

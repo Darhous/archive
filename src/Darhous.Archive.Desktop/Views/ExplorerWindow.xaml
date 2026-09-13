@@ -29,6 +29,7 @@
             <TextBlock Grid.Column="0" x:Name="UserText" Style="{StaticResource SecondaryText}"
                        VerticalAlignment="Center" Margin="16,0" />
             <Menu Grid.Column="1" VerticalAlignment="Center" Background="Transparent" Margin="0,0,8,0">
+                <MenuItem x:Name="AiSettingsMenu" Header="إعدادات الذكاء الاصطناعي" Click="AiSettings_Click" />
                 <MenuItem x:Name="BackupMenu" Header="النسخ الاحتياطي">
                     <MenuItem Header="نسخة كاملة" Tag="Full" Click="QueueBackup_Click" />
                     <MenuItem Header="البيانات الوصفية" Tag="Metadata" Click="QueueBackup_Click" />

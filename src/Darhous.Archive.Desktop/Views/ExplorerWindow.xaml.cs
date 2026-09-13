@@ -28,6 +28,7 @@ public partial class ExplorerWindow : Window
     private readonly IUpdateService _updateService;
     private readonly IUpdateSettingsService _updateSettingsService;
     private readonly IUpdateRequestService _updateRequestService;
+    private readonly Func<AiSettingsWindow> _aiSettingsWindowFactory;
     private readonly ArchivePrincipal _principal;
     private readonly Action _onLogout;
 
@@ -41,6 +42,7 @@ public partial class ExplorerWindow : Window
         IUpdateService updateService,
         IUpdateSettingsService updateSettingsService,
         IUpdateRequestService updateRequestService,
+        Func<AiSettingsWindow> aiSettingsWindowFactory,
         Action onLogout)
     {
         InitializeComponent();
@@ -55,6 +57,7 @@ public partial class ExplorerWindow : Window
         _updateService = updateService;
         _updateSettingsService = updateSettingsService;
         _updateRequestService = updateRequestService;
+        _aiSettingsWindowFactory = aiSettingsWindowFactory;
         _principal = principal;
         _onLogout = onLogout;
 
@@ -62,10 +65,18 @@ public partial class ExplorerWindow : Window
         UserText.Text = principal.IsGuest ? "وضع الضيف (Guest Mode)" : $"{principal.DisplayName} — {principal.Role}";
         BackupMenu.IsEnabled = principal.Role == UserRole.Admin;
         UpdatesMenu.IsEnabled = principal.Role == UserRole.Admin;
+        AiSettingsMenu.IsEnabled = principal.Role == UserRole.Admin;
 
         Loaded += async (_, _) => await viewModel.InitializeAsync();
         viewModel.StatusMessage += (_, message) => Title = $"Darhous Smart Archive — {message}";
         viewModel.Preview.PropertyChanged += Preview_PropertyChanged;
+    }
+
+    private void AiSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var window = _aiSettingsWindowFactory();
+        window.Owner = this;
+        window.ShowDialog();
     }
 
     private void Updates_Click(object sender, RoutedEventArgs e)

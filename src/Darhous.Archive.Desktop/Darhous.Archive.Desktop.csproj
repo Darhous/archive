@@ -24,6 +24,7 @@
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Folders\Darhous.Archive.Modules.Folders.csproj" />
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Discovery\Darhous.Archive.Modules.Discovery.csproj" />
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Importers\Darhous.Archive.Modules.Importers.csproj" />
+    <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Ai\Darhous.Archive.Modules.Ai.csproj" />
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Plugins\Darhous.Archive.Modules.Plugins.csproj" />
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Reports\Darhous.Archive.Modules.Reports.csproj" />
     <ProjectReference Include="..\Modules\Darhous.Archive.Modules.Updates\Darhous.Archive.Modules.Updates.csproj" />
