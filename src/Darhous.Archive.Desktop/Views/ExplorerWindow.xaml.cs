@@ -12,6 +12,7 @@ using Darhous.Archive.Security.Authentication;
 using Darhous.Archive.Security.Sessions;
 using Darhous.Archive.Core.Permissions;
 using Darhous.Backup.Local;
+using Darhous.Archive.Modules.Updates;
 
 namespace Darhous.Archive.Desktop.Views;
 
@@ -24,6 +25,9 @@ public partial class ExplorerWindow : Window
     private readonly IPdfPrintService _pdfPrintService;
     private readonly IBackupRequestService _backupRequestService;
     private readonly ILocalBackupService _localBackupService;
+    private readonly IUpdateService _updateService;
+    private readonly IUpdateSettingsService _updateSettingsService;
+    private readonly IUpdateRequestService _updateRequestService;
     private readonly ArchivePrincipal _principal;
     private readonly Action _onLogout;
 
@@ -34,6 +38,9 @@ public partial class ExplorerWindow : Window
         IPdfPrintService pdfPrintService,
         IBackupRequestService backupRequestService,
         ILocalBackupService localBackupService,
+        IUpdateService updateService,
+        IUpdateSettingsService updateSettingsService,
+        IUpdateRequestService updateRequestService,
         Action onLogout)
     {
         InitializeComponent();
@@ -45,16 +52,33 @@ public partial class ExplorerWindow : Window
         _pdfPrintService = pdfPrintService;
         _backupRequestService = backupRequestService;
         _localBackupService = localBackupService;
+        _updateService = updateService;
+        _updateSettingsService = updateSettingsService;
+        _updateRequestService = updateRequestService;
         _principal = principal;
         _onLogout = onLogout;
 
         DataContext = viewModel;
         UserText.Text = principal.IsGuest ? "وضع الضيف (Guest Mode)" : $"{principal.DisplayName} — {principal.Role}";
         BackupMenu.IsEnabled = principal.Role == UserRole.Admin;
+        UpdatesMenu.IsEnabled = principal.Role == UserRole.Admin;
 
         Loaded += async (_, _) => await viewModel.InitializeAsync();
         viewModel.StatusMessage += (_, message) => Title = $"Darhous Smart Archive — {message}";
         viewModel.Preview.PropertyChanged += Preview_PropertyChanged;
+    }
+
+    private void Updates_Click(object sender, RoutedEventArgs e)
+    {
+        var window = new UpdateSettingsWindow(
+            _updateService,
+            _updateSettingsService,
+            _updateRequestService,
+            _principal.UserId)
+        {
+            Owner = this,
+        };
+        window.ShowDialog();
     }
 
     /// <summary>

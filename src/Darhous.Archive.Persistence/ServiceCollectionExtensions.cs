@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Darhous.Archive.Application.Persistence;
+using Darhous.Archive.Configuration;
 using Darhous.Archive.Core.Events;
 using Darhous.Archive.Core.Health;
 using Darhous.Archive.Persistence.Configuration;
@@ -49,6 +50,11 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IUnitOfWork>(sp =>
             new SqliteUnitOfWork(sp.GetRequiredKeyedService<ISqliteWriteQueue>(DatabaseKind.Archive)));
+
+        services.AddSingleton<IAppSettingsStore>(sp => new SqliteAppSettingsStore(
+            sp.GetRequiredService<ISqliteConnectionFactory>(),
+            sp.GetRequiredKeyedService<ISqliteWriteQueue>(DatabaseKind.Archive),
+            sp.GetRequiredService<Core.Time.IClock>()));
 
         services.AddSingleton<IRoleRepository>(sp =>
             new RoleRepository(sp.GetRequiredService<ISqliteConnectionFactory>()));

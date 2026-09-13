@@ -13,6 +13,7 @@ public class InitialMigrationTests : PersistenceTestBase
         "storage_roots", "source_drives", "source_exclusions", "discovery_runs", "watch_folders", // M202609120002_DiscoverySchema (Phase 9)
         "plugins", "plugin_permissions", "plugin_settings", // M202609120003_PluginSchema (Phase 12)
         "backup_history", // M202609120007_BackupHistory (Phase 18)
+        "update_history", // M202609120008_UpdateHistory (Phase 19)
     ];
 
     [Fact]
@@ -69,6 +70,8 @@ public class InitialMigrationTests : PersistenceTestBase
         Assert.Contains("ux_user_sessions_token_hash", indexes);
         Assert.Contains("ix_backup_history_started_at", indexes);
         Assert.Contains("ix_backup_history_status", indexes);
+        Assert.Contains("ix_update_history_component_started", indexes);
+        Assert.Contains("ix_update_history_status", indexes);
     }
 
     [Fact]

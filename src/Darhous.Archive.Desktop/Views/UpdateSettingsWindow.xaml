@@ -1,0 +1,37 @@
+<Window x:Class="Darhous.Archive.Desktop.Views.UpdateSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Updates" Height="330" Width="520"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="{DynamicResource AppBackgroundBrush}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Updates" FontSize="22" FontWeight="SemiBold"
+                   Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,16" />
+        <CheckBox Grid.Row="1" x:Name="AutoCheckBox" Content="Auto Check" Margin="0,0,0,10" />
+        <CheckBox Grid.Row="2" x:Name="AutoInstallBox" Content="Auto Install" Margin="0,0,0,16" />
+
+        <WrapPanel Grid.Row="3" Margin="0,0,0,16">
+            <Button Content="Check for Updates" Style="{StaticResource PrimaryButton}"
+                    Click="Check_Click" Margin="0,0,8,0" />
+            <Button Content="Manual Install..." Click="Install_Click" Margin="0,0,8,0" />
+            <Button Content="Rollback Latest" Click="Rollback_Click" />
+        </WrapPanel>
+
+        <TextBlock Grid.Row="4" x:Name="StatusText" TextWrapping="Wrap"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Save" Style="{StaticResource PrimaryButton}" Click="Save_Click" Margin="0,0,8,0" />
+            <Button Content="Close" Click="Close_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

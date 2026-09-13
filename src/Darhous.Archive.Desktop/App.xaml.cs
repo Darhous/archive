@@ -17,6 +17,7 @@ using Darhous.Archive.Modules.Plugins;
 using Darhous.Archive.Modules.Reports;
 using Darhous.Archive.Modules.Reports.Printing;
 using Darhous.Archive.Modules.Reports.SavedViews;
+using Darhous.Archive.Modules.Updates;
 using Darhous.Archive.Core.Audit;
 using Darhous.Archive.Core.Events;
 using Darhous.Archive.Core.Time;
@@ -74,6 +75,10 @@ public partial class App : System.Windows.Application
                 registry.AddSingleton(services.GetRequiredService<IEventBus>());
                 registry.AddSingleton(services.GetRequiredService<IClock>());
             });
+        builder.Services.AddUpdatesModule(new UpdateModuleOptions
+        {
+            InstalledVersion = typeof(App).Assembly.GetName().Version ?? new Version(1, 0, 0),
+        });
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginWindow>();
 
@@ -137,6 +142,9 @@ public partial class App : System.Windows.Application
                 _host.Services.GetRequiredService<IPdfPrintService>(),
                 _host.Services.GetRequiredService<IBackupRequestService>(),
                 _host.Services.GetRequiredService<ILocalBackupService>(),
+                _host.Services.GetRequiredService<IUpdateService>(),
+                _host.Services.GetRequiredService<IUpdateSettingsService>(),
+                _host.Services.GetRequiredService<IUpdateRequestService>(),
                 onLogout: ShowLoginWindow);
 
             explorer.Show();

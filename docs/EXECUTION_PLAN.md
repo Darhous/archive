@@ -431,10 +431,21 @@ Performance → Installer
 - **فجوات موثّقة صراحة في `WORKER_REPORT.md` (نفس مستوى الصدق العالي المعتاد من Codex)**: Confidence **5.5/10 Production-readiness** (لا اختبار Power-loss حقيقي، لا اختبار USB فعلي، لا اختبار Disk-full، لا استعادة من Schema قديم فعليًا، الحزم غير موقّعة/غير مشفّرة، لا Retention/Rotation policy) مقابل **8.0/10 Happy-path**. **ملاحظة صريحة مهمة من التقرير نفسه**: "Stop writes" بمعنى حقيقي محدود — بيوقف طوابير الكتابة الداخلية لنفس الـProcess بس، مش أي Process/Handle خارجي تاني (DB Browser، برنامج Antivirus، إلخ) — صدق معماري حقيقي مش ادّعاء Atomicity زيادة عن الواقع.
 - **تحقق مستقل مطابق 100% للتقرير**: 8/8 `Backup.Local.Tests`، 42/42 `Persistence.Tests`، Release build نظيف. `Desktop.Tests` أظهر فشل واحد (Gate أداء الـ100k صف) عند التشغيل بالتوازي مع فحص Gemini الشامل على نفس الجهاز — نجح 1/1 لما اتشغّل لوحده، نفس فئة الحساسية البيئية الموثّقة (Flaky #1).
 
-### Phase 19 — Updates `[ ]`
-*مرجع: §78-80*
-- [ ] Check for updates, Manual install, Auto-check/install, Rollback
-- [ ] Update Safety: verify signature → backup DB if migration → stage → rollback point
+### Phase 19 — Updates `[x]`
+*مرجع: §78-80 — نُفِّذت بالكامل بواسطة Codex في Worktree مستقل (`phase-19-codex`)، رُوجِعت واندمجت بواسطة Claude*
+- [x] مشروع جديد `Darhous.Archive.Modules.Updates`: `IUpdateSource`/`LocalManifestUpdateSource` (Feed JSON محلي مُصمَّم عمدًا كـAbstraction قابلة للاستبدال بـVelopack/CDN حقيقي لاحقًا — Feed حقيقي مؤجل عمدًا لقرار Phase 24، مش نقص).
+- [x] **حزم `.darhousupdate` موقّعة** (ZIP فيه `manifest.json`+`checksums.json`+`signature.p7s`+`payload/`) — **قرار معماري سليم**: منطق التحقق من CMS/PKCS#7 اتفصل من كود Phase 12 (`Darhous.Archive.Modules.Plugins`) لكلاس مشترك `CmsPackageSignatureVerifier` بدل تكرار نفس الخوارزمية — نفس آلية الثقة (Thumbprint allow-list)، مفيش تحقق تاني مختلف. اتأكد إن الـRefactor مكسرش اختبارات Phase 12 القديمة (11/11 لسه شغالة).
+- [x] **Update Safety Flow بالترتيب المطلوب بالحرف**: Verify signature/checksums → **إعادة استخدام حقيقية لـBackup من Phase 18** (`BackupType.Metadata`، مش اختراع آلية Backup تانية — قرار موثّق: قواعد البيانات بس كافية لتحديث بيتغير فيه الـSchema، مش محتاج نسخ ملفات المستندات) → Stage → Rollback point (نسخ SHA-256-verified لكل ملف هيتغير + حذف الملفات الجديدة عند التراجع).
+- [x] **Rollback حقيقي وقابل للاختبار**: نسخ الملفات الأصلية قبل أي تعديل، استعادة تلقائية عند فشل التطبيق، استدعاء حقيقي لـ`LocalBackupService.RestoreAsync` من Phase 18 لتحديثات الـMigration.
+- [x] **جدول `update_history`** (DB Spec §78) عبر Migration جديدة (`M202609120008`)، مع Indexes.
+- [x] **`IAppSettingsStore` الحقيقي اتبنى لأول مرة فعليًا** — كان العقد والجدول موجودين من Phase 1/2 بس مفيش Implementation/DI Registration حقيقي قبل كده! (`SqliteAppSettingsStore` جديد). إعدادات Updates (`updates.auto_check`, `updates.auto_install`) بتتخزن فيه.
+- [x] Manual install/Auto-check-on-startup/Auto-install/Rollback عبر `JobRunner` (Phase 9)، واجهة WPF رقيقة Admin-only (Check for Updates/Auto Check/Auto Install بالظبط زي §79).
+- [x] **9 اختبارات جديدة** بشهادات RSA حقيقية وتوقيعات CMS حقيقية فعليًا (مش Mock)، من ضمنهم اختبار حقيقي بيثبت إن Backup فعلي من Phase 18 بيتعمل ويتحقق منه *قبل* أي تعديل، واختبار بيثبت إن فشل الـBackup بيوقف التحديث *قبل* أي Staging.
+- **فجوات موثّقة صراحة (نفس مستوى الصدق المعتاد)**: Confidence **4/10 Production-readiness** (استبدال الـExecutable الشغّال فعليًا مش مُثبَت — ده محتاج Updater خارجي من Phase 24، مفيش Feed حقيقي/CDN، مفيش Migration-down حقيقي) مقابل **8.5/10 Happy-path**.
+- **⚠️ تعارض حقيقي اكتُشف مع Phase 20 (شغّالة بالتوازي)**: الاتنين اكتشفوا نفس الفجوة (مفيش `IAppSettingsStore` حقيقي) وبنوا نفس الحل بشكل مستقل (كلاس `SqliteAppSettingsStore` في مكانين مختلفين!) + عدّلوا نفس ملفات الواجهة (`App.xaml.cs`/`ExplorerWindow`) لإضافة قوائمهم. **القرار**: نسخة Phase 19 اتقبلت كمرجعية (بتستخدم `IClock` — نفس تقليد المشروع)، وهيتم تعديل Phase 20 وقت دمجها لاحقًا لاستخدام نفس الكلاس بدل تكراره.
+- **تحقق مستقل مطابق 100% للتقرير**: 9/9 `Updates.Tests`، 11/11 `Plugins.Tests` (بعد الـRefactor)، 43/43 `Persistence.Tests`، 22/22 `Desktop.Tests`، Release build نظيف.
+
+### Phase 20 — AI Foundation `[ ]`
 
 ### Phase 20 — AI Foundation `[ ]`
 *مرجع: §81-83*

@@ -36,6 +36,7 @@
                     <Separator />
                     <MenuItem Header="استعادة نسخة..." Click="RestoreBackup_Click" />
                 </MenuItem>
+                <MenuItem x:Name="UpdatesMenu" Header="Updates" Click="Updates_Click" />
                 <MenuItem Header="التقارير">
                     <MenuItem Header="تصدير Excel" Tag="Excel" Click="ExportReport_Click" />
                     <MenuItem Header="تصدير CSV" Tag="Csv" Click="ExportReport_Click" />
