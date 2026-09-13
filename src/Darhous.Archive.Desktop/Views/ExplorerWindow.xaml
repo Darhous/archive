@@ -29,6 +29,13 @@
             <TextBlock Grid.Column="0" x:Name="UserText" Style="{StaticResource SecondaryText}"
                        VerticalAlignment="Center" Margin="16,0" />
             <Menu Grid.Column="1" VerticalAlignment="Center" Background="Transparent" Margin="0,0,8,0">
+                <MenuItem x:Name="BackupMenu" Header="النسخ الاحتياطي">
+                    <MenuItem Header="نسخة كاملة" Tag="Full" Click="QueueBackup_Click" />
+                    <MenuItem Header="البيانات الوصفية" Tag="Metadata" Click="QueueBackup_Click" />
+                    <MenuItem Header="الإعدادات" Tag="Configuration" Click="QueueBackup_Click" />
+                    <Separator />
+                    <MenuItem Header="استعادة نسخة..." Click="RestoreBackup_Click" />
+                </MenuItem>
                 <MenuItem Header="التقارير">
                     <MenuItem Header="تصدير Excel" Tag="Excel" Click="ExportReport_Click" />
                     <MenuItem Header="تصدير CSV" Tag="Csv" Click="ExportReport_Click" />

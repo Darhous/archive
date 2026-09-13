@@ -33,6 +33,7 @@ using Darhous.Archive.Security;
 using Darhous.Archive.Security.Authentication;
 using Darhous.Archive.Security.Sessions;
 using Darhous.Search.SqliteFts;
+using Darhous.Backup.Local;
 
 namespace Darhous.Archive.Desktop;
 
@@ -56,6 +57,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddDiscoveryModule();
         builder.Services.AddImportersModule();
         builder.Services.AddReportsModule();
+        builder.Services.AddLocalBackupPlugin();
         builder.Services.AddJobRunner();
         builder.Services.AddPluginsModule(
             typeof(App).Assembly.GetName().Version ?? new Version(1, 0, 0),
@@ -133,6 +135,8 @@ public partial class App : System.Windows.Application
                 _host.Services.GetRequiredService<IAuthenticationService>(),
                 _host.Services.GetRequiredService<ISavedViewReportService>(),
                 _host.Services.GetRequiredService<IPdfPrintService>(),
+                _host.Services.GetRequiredService<IBackupRequestService>(),
+                _host.Services.GetRequiredService<ILocalBackupService>(),
                 onLogout: ShowLoginWindow);
 
             explorer.Show();

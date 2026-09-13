@@ -83,6 +83,53 @@ public sealed class SqliteWriteQueue(
         return await completion.Task;
     }
 
+    public async Task<ISqliteMaintenanceLease> PauseAsync(CancellationToken cancellationToken)
+    {
+        var acquired = new TaskCompletionSource<ISqliteMaintenanceLease>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        async Task PauseConsumerAsync(CancellationToken workerToken)
+        {
+            try
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    acquired.TrySetCanceled(cancellationToken);
+                    return;
+                }
+
+                var connection = _writerConnection
+                    ?? throw new InvalidOperationException($"Write queue for {database} has not started yet.");
+                var lease = new MaintenanceLease(connection, resume);
+                acquired.TrySetResult(lease);
+
+                try
+                {
+                    await resume.Task.WaitAsync(workerToken);
+                }
+                catch (OperationCanceledException) when (workerToken.IsCancellationRequested)
+                {
+                    resume.TrySetResult();
+                }
+            }
+            catch (Exception exception)
+            {
+                acquired.TrySetException(exception);
+            }
+        }
+
+        if (!await _channel.Writer.WaitToWriteAsync(cancellationToken))
+        {
+            throw new InvalidOperationException($"Write queue for {database} is shut down.");
+        }
+
+        await _channel.Writer.WriteAsync(PauseConsumerAsync, cancellationToken);
+        // Do not apply a second cancellation race here: once the consumer has published the
+        // lease, abandoning this await could orphan a live pause that nobody can dispose.
+        // Cancellation requested while the item is still queued is observed inside the item.
+        return await acquired.Task;
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _writerConnection = await connectionFactory.OpenAsync(database, stoppingToken);
@@ -119,5 +166,30 @@ public sealed class SqliteWriteQueue(
     {
         _channel.Writer.TryComplete();
         await base.StopAsync(cancellationToken);
+    }
+
+    private sealed class MaintenanceLease(
+        SqliteConnection connection,
+        TaskCompletionSource resume) : ISqliteMaintenanceLease
+    {
+        private int _disposed;
+
+        public async Task<TResult> ExecuteAsync<TResult>(
+            Func<SqliteConnection, CancellationToken, Task<TResult>> operation,
+            CancellationToken cancellationToken)
+        {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            return await operation(connection, cancellationToken);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                resume.TrySetResult();
+            }
+
+            return ValueTask.CompletedTask;
+        }
     }
 }

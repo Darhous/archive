@@ -418,11 +418,18 @@ Performance → Installer
 - **فجوات موثّقة صراحة في `WORKER_REPORT.md` (نفس مستوى الصدق العالي بتاع Codex من Phase 15)**: Confidence **6.0/10 Production-readiness** (مفيش اختبار طابعة حقيقية، مفيش مراجعة بصرية للـUI/الـPDF العربي، مفيش اختبار حمل/تزامن، Excel نص فقط، الـAudit export محدود بصفحة واحدة، مفيش تنظيف لملفات الطباعة المؤقتة) مقابل **8.5/10 Happy-path**.
 - **قرار دمج**: مفيش تصادم Packages فعلي — الحزم التلاتة اللي Codex استخدمها (`DocumentFormat.OpenXml`, `Microsoft.Extensions.DependencyInjection`, `PDFsharp`) كانت **موجودة بالفعل** في `Directory.Packages.props` (من Phase 10/1/15) بنفس الإصدارات بالظبط — مفيش أي تعديل مطلوب على الملف ده وقت الدمج. Claude ضاف المشروعين الجديدين للـslnx وكتب هذا القسم بعد بناء/اختبار مستقل مطابق للتقرير 100%.
 
-### Phase 18 — Backup & Restore `[ ]`
-*مرجع: §75-77*
-- [ ] Official Plugin: `Darhous.Backup.Local` (Local folder/Another drive/USB)
-- [ ] Backup Flow: validate → SQLite Online Backup → copy managed files (Full) → checksums → package → verify
-- [ ] Restore Flow: validate → safety backup → stop writes → restore → migrate → rebuild search → verify
+### Phase 18 — Backup & Restore `[x]`
+*مرجع: §75-77 — نُفِّذت بالكامل بواسطة Codex في Worktree مستقل (`phase-18-codex`)، رُوجِعت واندمجت بواسطة Claude*
+- [x] Official Plugin: `Darhous.Backup.Local` (`IArchivePlugin`) يدعم Local folder/Another drive/USB عبر نفس Filesystem provider، و3 أنواع Backup (`metadata`/`full`/`configuration` — DB Spec §77).
+- [x] **Backup Flow الكامل**: Validate destination + Write probe → SQLite Online Backup API (`SqliteConnection.BackupDatabase`) لكل الـ3 قواعد (archive/audit/search) — **قرار تصميمي سليم**: مش File-copy مباشر (بيتفادى نسخة ممزّقة تحت WAL) → نسخ الملفات المُدارة والإعدادات حسب النوع → SHA-256 لكل ملف + حجمه → Manifest JSON → تعبئة ZIP عبر ملف `.partial` جانب الوجهة → إعادة تسمية ذرية → إعادة فتح وتحقق كامل → Checksum للحزمة كلها → تسجيل `backup_history`.
+- [x] **Restore Flow الكامل**: Validate (Manifest/المسارات/الأحجام/الـChecksums + سلامة SQLite) + رفض إصدار Schema أحدث → أخذ وتحقق Safety backup كاملة → تجهيز الأشجار البديلة مسبقًا → **Drain/Pause حقيقي لكل الـ3 طوابير كتابة SQLite داخل نفس العملية** (امتداد جديد على `SqliteWriteQueue` — Maintenance lease FIFO) → استعادة كل قاعدة عبر SQLite Online Backup للاتصالات الحية → تبديل الملفات/الإعدادات → تشغيل FluentMigrator → تحرير طابور الـSearch واستدعاء `ISearchIndexRebuilder` (Phase 8) → تحقق سلامة شامل → استئناف الطوابير. فشل داخل الجزء الحرج المبكر بيعمل Rollback تلقائي من الـSafety backup؛ فشل بعد تحرير طابور الـSearch بيرمي `RestoreRecoveryRequiredException` صراحةً ويقفل التطبيق (مفيش استمرار بحالة جزئية مقبولة).
+- [x] **جدول `backup_history`** (DB Spec §76) عبر Migration جديدة، مع Indexes على `started_at`/`status`.
+- [x] **Backup عبر Job حقيقي** (Phase 9's `JobRunner`) — مش على الـUI Thread مباشرة، مع Progress reporting.
+- [x] **واجهة Explorer Admin-only** لتشغيل Backup/Restore، بتأكيد صريح ومسار الـSafety backup المحتفظ به معروض للمستخدم.
+- [x] **8 اختبارات جديدة** تغطي كل أنواع الـPayload، محتوى الحزمة والـManifest، رفض حزمة تالفة *قبل* أي Safety backup أو تعديل للحالة الحالية، و**اختبار Restore حي كامل** بيثبت إن الـSafety package فعلاً بيحتفظ بالحالة قبل الاستعادة مباشرة، والطوابير بترجع تستقبل كتابة بعد الانتهاء.
+- **تصادم Migration تاني اتصلح وقت الدمج (نفس الفئة بالظبط زي Phase 15/16)**: كودكس بنى الـWorktree بتاعه على `main` قبل ما Phase 16 تندمج، فاستخدم نفس رقم `202609120006` اللي Phase 16 حجزته — اتنقّل لـ`202609120007`.
+- **فجوات موثّقة صراحة في `WORKER_REPORT.md` (نفس مستوى الصدق العالي المعتاد من Codex)**: Confidence **5.5/10 Production-readiness** (لا اختبار Power-loss حقيقي، لا اختبار USB فعلي، لا اختبار Disk-full، لا استعادة من Schema قديم فعليًا، الحزم غير موقّعة/غير مشفّرة، لا Retention/Rotation policy) مقابل **8.0/10 Happy-path**. **ملاحظة صريحة مهمة من التقرير نفسه**: "Stop writes" بمعنى حقيقي محدود — بيوقف طوابير الكتابة الداخلية لنفس الـProcess بس، مش أي Process/Handle خارجي تاني (DB Browser، برنامج Antivirus، إلخ) — صدق معماري حقيقي مش ادّعاء Atomicity زيادة عن الواقع.
+- **تحقق مستقل مطابق 100% للتقرير**: 8/8 `Backup.Local.Tests`، 42/42 `Persistence.Tests`، Release build نظيف. `Desktop.Tests` أظهر فشل واحد (Gate أداء الـ100k صف) عند التشغيل بالتوازي مع فحص Gemini الشامل على نفس الجهاز — نجح 1/1 لما اتشغّل لوحده، نفس فئة الحساسية البيئية الموثّقة (Flaky #1).
 
 ### Phase 19 — Updates `[ ]`
 *مرجع: §78-80*

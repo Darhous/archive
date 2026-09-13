@@ -10,6 +10,8 @@ using Darhous.Archive.Modules.Reports.Printing;
 using Darhous.Archive.Modules.Reports.SavedViews;
 using Darhous.Archive.Security.Authentication;
 using Darhous.Archive.Security.Sessions;
+using Darhous.Archive.Core.Permissions;
+using Darhous.Backup.Local;
 
 namespace Darhous.Archive.Desktop.Views;
 
@@ -20,6 +22,9 @@ public partial class ExplorerWindow : Window
     private readonly IAuthenticationService _authenticationService;
     private readonly ISavedViewReportService _savedViewReportService;
     private readonly IPdfPrintService _pdfPrintService;
+    private readonly IBackupRequestService _backupRequestService;
+    private readonly ILocalBackupService _localBackupService;
+    private readonly ArchivePrincipal _principal;
     private readonly Action _onLogout;
 
     public ExplorerWindow(
@@ -27,6 +32,8 @@ public partial class ExplorerWindow : Window
         IAuthenticationService authenticationService,
         ISavedViewReportService savedViewReportService,
         IPdfPrintService pdfPrintService,
+        IBackupRequestService backupRequestService,
+        ILocalBackupService localBackupService,
         Action onLogout)
     {
         InitializeComponent();
@@ -36,10 +43,14 @@ public partial class ExplorerWindow : Window
         _authenticationService = authenticationService;
         _savedViewReportService = savedViewReportService;
         _pdfPrintService = pdfPrintService;
+        _backupRequestService = backupRequestService;
+        _localBackupService = localBackupService;
+        _principal = principal;
         _onLogout = onLogout;
 
         DataContext = viewModel;
         UserText.Text = principal.IsGuest ? "وضع الضيف (Guest Mode)" : $"{principal.DisplayName} — {principal.Role}";
+        BackupMenu.IsEnabled = principal.Role == UserRole.Admin;
 
         Loaded += async (_, _) => await viewModel.InitializeAsync();
         viewModel.StatusMessage += (_, message) => Title = $"Darhous Smart Archive — {message}";
@@ -181,6 +192,91 @@ public partial class ExplorerWindow : Window
         catch (Exception exception)
         {
             MessageBox.Show(this, exception.Message, "فشل طباعة التقرير", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void QueueBackup_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: string typeName } ||
+            !Enum.TryParse<BackupType>(typeName, ignoreCase: true, out var type))
+        {
+            return;
+        }
+
+        var dialog = new OpenFolderDialog
+        {
+            Title = "اختر مجلد وجهة النسخة الاحتياطية",
+            Multiselect = false,
+        };
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var jobUid = await _backupRequestService.QueueAsync(
+                new BackupRequest(type, dialog.FolderName, _principal.UserId),
+                CancellationToken.None);
+            Title = $"Darhous Smart Archive — تمت جدولة النسخة الاحتياطية ({jobUid}).";
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(this, exception.Message, "فشل جدولة النسخة الاحتياطية", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void RestoreBackup_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "اختر حزمة النسخة الاحتياطية",
+            Filter = "Darhous backup (*.darhousbackup)|*.darhousbackup|All files (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false,
+        };
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        var confirmation = MessageBox.Show(
+            this,
+            "ستُفحص الحزمة أولًا، ثم تُنشأ نسخة أمان كاملة من الحالة الحالية قبل الاستعادة. سيُغلق التطبيق بعد النجاح. هل تريد المتابعة؟",
+            "تأكيد استعادة النسخة الاحتياطية",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (confirmation != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        BackupMenu.IsEnabled = false;
+        try
+        {
+            var result = await _localBackupService.RestoreAsync(dialog.FileName, _principal.UserId, CancellationToken.None);
+            MessageBox.Show(
+                this,
+                $"اكتملت الاستعادة والتحقق. حُفظت نسخة الأمان الحالية هنا:\n{result.SafetyBackupPath}\n\nسيُغلق التطبيق الآن لإعادة تحميل الحالة المستعادة بأمان.",
+                "اكتملت الاستعادة",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            System.Windows.Application.Current.Shutdown();
+        }
+        catch (RestoreRecoveryRequiredException exception)
+        {
+            MessageBox.Show(
+                this,
+                $"فشلت الاستعادة بعد بدء تغيير الحالة الحية. يجب إغلاق التطبيق وعدم متابعة العمل. نسخة الأمان:\n{exception.SafetyBackupPath}\n\n{exception.Message}",
+                "الاستعادة تحتاج تدخلاً",
+                MessageBoxButton.OK,
+                MessageBoxImage.Stop);
+            System.Windows.Application.Current.Shutdown();
+        }
+        catch (Exception exception)
+        {
+            BackupMenu.IsEnabled = true;
+            MessageBox.Show(this, exception.Message, "فشل استعادة النسخة الاحتياطية", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Darhous.Archive.Application/Darhous.Archive.Application.csproj" />
+    <ProjectReference Include="../../Darhous.Archive.Configuration/Darhous.Archive.Configuration.csproj" />
+    <ProjectReference Include="../../Darhous.Archive.Core/Darhous.Archive.Core.csproj" />
+    <ProjectReference Include="../../Darhous.Archive.Persistence/Darhous.Archive.Persistence.csproj" />
+    <ProjectReference Include="../../Darhous.Archive.PluginSdk/Darhous.Archive.PluginSdk.csproj" />
+    <ProjectReference Include="../Darhous.Search.SqliteFts/Darhous.Search.SqliteFts.csproj" />
+    <InternalsVisibleTo Include="Darhous.Backup.Local.Tests" />
+  </ItemGroup>
+</Project>

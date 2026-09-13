@@ -12,6 +12,7 @@ public class InitialMigrationTests : PersistenceTestBase
         "user_sessions", // M202609110002_UserSessions (Phase 3)
         "storage_roots", "source_drives", "source_exclusions", "discovery_runs", "watch_folders", // M202609120002_DiscoverySchema (Phase 9)
         "plugins", "plugin_permissions", "plugin_settings", // M202609120003_PluginSchema (Phase 12)
+        "backup_history", // M202609120007_BackupHistory (Phase 18)
     ];
 
     [Fact]
@@ -66,6 +67,8 @@ public class InitialMigrationTests : PersistenceTestBase
         Assert.Contains("ix_outbox_events_status_next_retry", indexes);
         Assert.Contains("ix_jobs_status_priority_created", indexes);
         Assert.Contains("ux_user_sessions_token_hash", indexes);
+        Assert.Contains("ix_backup_history_started_at", indexes);
+        Assert.Contains("ix_backup_history_status", indexes);
     }
 
     [Fact]

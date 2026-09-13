@@ -15,4 +15,19 @@ public interface ISqliteWriteQueue
     Task<TResult> EnqueueAsync<TResult>(
         Func<SqliteConnection, SqliteTransaction, CancellationToken, Task<TResult>> operation,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Drains all work queued before this call and then pauses the consumer until the returned
+    /// lease is disposed. New writes remain queued behind the lease. Intended only for short,
+    /// process-wide maintenance such as a verified database restore.
+    /// </summary>
+    Task<ISqliteMaintenanceLease> PauseAsync(CancellationToken cancellationToken);
+}
+
+/// <summary>An exclusive, transaction-free maintenance window on a write queue's connection.</summary>
+public interface ISqliteMaintenanceLease : IAsyncDisposable
+{
+    Task<TResult> ExecuteAsync<TResult>(
+        Func<SqliteConnection, CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken);
 }

@@ -106,4 +106,34 @@ public class SqliteWriteQueueTests : PersistenceTestBase
             await queue.StopAsync(CancellationToken.None);
         }
     }
+
+    [Fact]
+    public async Task PauseAsync_DrainsEarlierWorkAndBlocksLaterWritesUntilDisposed()
+    {
+        var queue = await StartQueueAsync();
+        try
+        {
+            await queue.EnqueueAsync((_, _, _) => Task.FromResult(true), CancellationToken.None);
+            var lease = await queue.PauseAsync(CancellationToken.None);
+            var laterWrite = queue.EnqueueAsync((_, _, _) => Task.FromResult(42), CancellationToken.None);
+
+            await Task.Delay(50);
+            Assert.False(laterWrite.IsCompleted);
+
+            var integrity = await lease.ExecuteAsync(async (connection, ct) =>
+            {
+                await using var command = connection.CreateCommand();
+                command.CommandText = "PRAGMA integrity_check;";
+                return (string)(await command.ExecuteScalarAsync(ct))!;
+            }, CancellationToken.None);
+            Assert.Equal("ok", integrity);
+
+            await lease.DisposeAsync();
+            Assert.Equal(42, await laterWrite);
+        }
+        finally
+        {
+            await queue.StopAsync(CancellationToken.None);
+        }
+    }
 }

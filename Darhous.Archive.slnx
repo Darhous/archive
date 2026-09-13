@@ -29,6 +29,7 @@
   <Folder Name="/src/OfficialPlugins/">
     <Project Path="src/OfficialPlugins/Darhous.Search.SqliteFts/Darhous.Search.SqliteFts.csproj" />
     <Project Path="src/OfficialPlugins/Darhous.Notifications.Windows/Darhous.Notifications.Windows.csproj" />
+    <Project Path="src/OfficialPlugins/Darhous.Backup.Local/Darhous.Backup.Local.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Darhous.Archive.Application.Tests/Darhous.Archive.Application.Tests.csproj" />
@@ -54,6 +55,7 @@
     <Project Path="tests/Darhous.Archive.Modules.Notifications.Tests/Darhous.Archive.Modules.Notifications.Tests.csproj" />
     <Project Path="tests/Darhous.Archive.Modules.NotificationsTelegram.Tests/Darhous.Archive.Modules.NotificationsTelegram.Tests.csproj" />
     <Project Path="tests/Darhous.Notifications.Windows.Tests/Darhous.Notifications.Windows.Tests.csproj" />
+    <Project Path="tests/Darhous.Backup.Local.Tests/Darhous.Backup.Local.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Fixtures/">
     <Project Path="tests/Fixtures/Darhous.TestPlugin/Darhous.TestPlugin.csproj" />
